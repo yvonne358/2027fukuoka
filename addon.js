@@ -1,7 +1,7 @@
 /* 旅遊小幫手 附加功能：倒數貼紙、行程照片、今日路線、Firebase 即時同步、多旅程模板 */
 (function () {
   // ▼▼▼ 只需要改這裡：貼上 Firebase 給你的設定（教學見「設定教學.md」）▼▼▼
-  const FIREBASE_CONFIG = { apiKey: "", authDomain: "", databaseURL: "", projectId: "", appId: "" };
+  const FIREBASE_CONFIG = { apiKey: "AIzaSyAwVNxRT6VMje1ZutvaOx-oL36MsaF8f1w", authDomain: "travel-plan-46bc4.firebaseapp.com", databaseURL: "https://travel-plan-46bc4-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "travel-plan-46bc4", appId: "1:995767265783:web:a12f909fda79f5d4d766f2" };
   // ▲▲▲ 留空的話，會繼續使用原本的 Google 同步，其他功能照常 ▲▲▲
 
   const $ = id => document.getElementById(id);
