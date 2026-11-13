@@ -52,3 +52,17 @@ summary{cursor:pointer;font-weight:700}
 .cr select{width:100px;margin:4px 0}
 .tr-row{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%}
 .tr-row select{width:60%;margin:4px 0}
+
+/* Q版人物動畫 */
+.cd-scene svg{display:block;margin:0 auto}
+.cd-scene svg *{transform-box:fill-box}
+.k-blink{transform-origin:center;animation:kblink 4s infinite}@keyframes kblink{0%,94%,100%{transform:scaleY(1)}97%{transform:scaleY(.1)}}
+.k-tapL{animation:ktap .5s infinite}.k-tapR{animation:ktap .5s .25s infinite}@keyframes ktap{50%{transform:translateY(-4px)}}
+.k-bob{animation:kbob 1.8s ease-in-out infinite}@keyframes kbob{50%{transform:translateY(-3px)}}
+.k-spin{transform-origin:center;animation:kspin 1s linear infinite}@keyframes kspin{to{transform:rotate(360deg)}}
+.k-twinkle{animation:ktw 1.4s ease-in-out infinite}@keyframes ktw{50%{opacity:.2}}
+.k-lid{transform-origin:left bottom;animation:klid 2.4s ease-in-out infinite}@keyframes klid{50%{transform:rotate(-22deg)}}
+.k-drop{animation:kdrop 2.4s infinite}@keyframes kdrop{0%{transform:translateY(-24px);opacity:0}30%{opacity:1}70%{transform:translateY(18px);opacity:1}100%{transform:translateY(18px);opacity:0}}
+.k-flap{transform-origin:center;animation:kflap .9s ease-in-out infinite}@keyframes kflap{50%{transform:rotate(8deg) translateY(-3px)}}
+.k-wave{animation:kwave 1.2s linear infinite}@keyframes kwave{to{transform:translateX(-26px)}}
+.k-leg{transform-origin:top center;animation:kleg .6s ease-in-out infinite alternate}@keyframes kleg{from{transform:rotate(-20deg)}to{transform:rotate(20deg)}}
