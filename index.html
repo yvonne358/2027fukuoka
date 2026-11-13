@@ -261,6 +261,7 @@
         #shopping-container { margin-top: 20px; }
         .shop-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
     </style>
+<link rel="stylesheet" href="addon.css">
 </head>
 <body>
 
@@ -1270,5 +1271,6 @@
         function addNewMemberField(){document.getElementById('members-list-edit').innerHTML+=`<div style="display:flex;margin-bottom:5px"><input placeholder="新成員" style="margin:0"><button class="btn-icon" onclick="this.parentElement.remove()">X</button></div>`;}
         function saveMembers(){const a=[];document.querySelectorAll('#members-list-edit input').forEach(i=>{if(i.value)a.push(i.value)});if(a.length>0){data.members=a;saveData();closeModal('modal-members');renderExpenseList();}}
     </script>
+<script src="addon.js"></script>
 </body>
 </html>
