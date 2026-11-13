@@ -1,8 +1,10 @@
 {
   "name": "福岡之旅",
   "short_name": "福岡之旅",
-  "start_url": "index.html",
+  "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#F8F8F6",
   "theme_color": "#8C7B70",
   "icons": [
@@ -14,7 +16,8 @@
     {
       "src": "app-icon.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     }
   ]
 }
