@@ -1,0 +1,30 @@
+/* 手繪貼紙風 + 日期列吸頂（附加檔，不修改原本 CSS） */
+@import url('https://fonts.googleapis.com/css2?family=Mali:wght@400;700&display=swap');
+:root{--ink:#4A423D;--font-serif:'Mali','Noto Sans TC',cursive;--font-sans:'Mali','Noto Sans TC',sans-serif;--shadow:3px 3px 0 var(--ink);--radius-card:18px 22px 16px 24px/22px 16px 24px 18px}
+body{background-image:radial-gradient(#e6dfd6 1.2px,transparent 1.2px);background-size:18px 18px}
+/* 日期列吸頂 */
+#date-list{position:sticky;top:env(safe-area-inset-top,0px);z-index:500;margin-top:0;padding:10px 20px;background:rgba(248,248,246,.95);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);border-bottom:2px dashed #cfc6bb}
+/* 貼紙感 */
+.date-card{border:2px solid var(--ink);box-shadow:2px 2px 0 var(--ink);border-radius:14px 10px 15px 11px}
+.date-card.active{background:var(--theme-pink);color:var(--ink);border-color:var(--ink);transform:rotate(-3deg)}
+.card.timeline-style{overflow:visible;border-top:2.5px solid var(--ink);border-right:2.5px solid var(--ink);border-bottom:2.5px solid var(--ink);box-shadow:var(--shadow);border-radius:var(--radius-card)}
+.timeline-card-wrapper:nth-child(odd) .card{transform:rotate(-.7deg)}
+.timeline-card-wrapper:nth-child(even) .card{transform:rotate(.7deg)}
+.card.timeline-style::before{content:'';position:absolute;top:-10px;right:20px;width:48px;height:16px;background:rgba(224,159,159,.6);transform:rotate(4deg);border-left:2px dotted rgba(255,255,255,.8);border-right:2px dotted rgba(255,255,255,.8)}
+.pack-category-card,.expense-card,.balance-card,.settlement-summary{border:2.5px solid var(--ink)!important;box-shadow:var(--shadow);border-radius:var(--radius-card)}
+.modal-content{border:3px solid var(--ink);box-shadow:5px 5px 0 var(--ink);border-radius:var(--radius-card)}
+.btn{border:2.5px solid var(--ink);box-shadow:2px 2px 0 var(--ink);border-radius:14px 10px 15px 11px}
+.btn-outline{background:#fff}
+.fab{border:2.5px solid var(--ink);box-shadow:3px 3px 0 var(--ink);background:var(--theme-pink)}
+.bottom-nav{border-top:2.5px solid var(--ink)}
+.nav-item.active{color:var(--ink);font-weight:700}
+.admin-lock-btn{border:2px solid var(--ink)}
+.flight-visual,.transport-visual,.event-note-box{border:2px dashed #b9afa4}
+/* 倒數貼紙 */
+#cd-sticker{align-self:flex-start;background:#FFF3B0;border:2.5px solid var(--ink);box-shadow:var(--shadow);border-radius:20px 14px 22px 12px;padding:6px 14px;font-weight:700;transform:rotate(-2deg);margin:0 0 12px 2px;display:inline-flex;gap:8px;align-items:center}
+#cd-sticker .plane{display:inline-block;animation:fly 2.4s ease-in-out infinite}
+@keyframes fly{0%,100%{transform:translate(0,0) rotate(-8deg)}50%{transform:translate(8px,-6px) rotate(6deg)}}
+/* 行程照片 / 路線 / 旅程按鈕 */
+.evt-img{width:100%;max-height:190px;object-fit:cover;border:3px solid #fff;outline:2px solid var(--ink);border-radius:6px;margin:8px 0;transform:rotate(-1deg);box-shadow:2px 3px 0 rgba(0,0,0,.2)}
+.route-btn{display:inline-block;margin:0 0 18px 20px;padding:6px 14px;background:#CFE8DC;border:2.5px solid var(--ink);box-shadow:var(--shadow);border-radius:16px 12px 18px 10px;color:var(--ink);text-decoration:none;font-weight:700;transform:rotate(1.5deg)}
+#trip-btn{position:fixed;left:15px;bottom:calc(80px + env(safe-area-inset-bottom));z-index:900;background:#E3D081;border:2.5px solid var(--ink);box-shadow:var(--shadow);border-radius:16px 12px 18px 10px;padding:6px 12px;font-weight:700;font-size:.85rem;cursor:pointer;transform:rotate(-2deg)}
