@@ -93,7 +93,7 @@
   };
 
   // --- 旅程切換 / 建立新旅程（模板）---
-  const b = document.createElement('div'); b.id = 'trip-btn'; b.innerText = '🗺️ ' + (trip === 'default' ? '旅程' : trip);
+  const b = document.createElement('div'); b.id = 'trip-btn'; b.className = 'admin-only'; b.innerText = '🗺️ ' + (trip === 'default' ? '旅程' : trip);
   b.onclick = async () => {
     const c = (prompt('輸入旅程代碼來開啟或建立旅程（建議用英文+數字，例如 tokyo2027）\n新的代碼 = 新旅程\n目前：' + trip) || '').trim().replace(/[.#$\[\]\/]/g, '');
     if (!c) return;
