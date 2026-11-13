@@ -1,30 +1,54 @@
-/* 手繪貼紙風 + 日期列吸頂（附加檔，不修改原本 CSS） */
+/* 柔和手繪風 + 日期列吸頂 + 須知/評分頁（附加檔） */
 @import url('https://fonts.googleapis.com/css2?family=Mali:wght@400;700&display=swap');
-:root{--ink:#4A423D;--font-serif:'Mali','Noto Sans TC',cursive;--font-sans:'Mali','Noto Sans TC',sans-serif;--shadow:3px 3px 0 var(--ink);--radius-card:18px 22px 16px 24px/22px 16px 24px 18px}
-body{background-image:radial-gradient(#e6dfd6 1.2px,transparent 1.2px);background-size:18px 18px}
-/* 日期列吸頂 */
-#date-list{position:sticky;top:env(safe-area-inset-top,0px);z-index:500;margin-top:0;padding:10px 20px;background:rgba(248,248,246,.95);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);border-bottom:2px dashed #cfc6bb}
-/* 貼紙感 */
-.date-card{border:2px solid var(--ink);box-shadow:2px 2px 0 var(--ink);border-radius:14px 10px 15px 11px}
-.date-card.active{background:var(--theme-pink);color:var(--ink);border-color:var(--ink);transform:rotate(-3deg)}
-.card.timeline-style{overflow:visible;border-top:2.5px solid var(--ink);border-right:2.5px solid var(--ink);border-bottom:2.5px solid var(--ink);box-shadow:var(--shadow);border-radius:var(--radius-card)}
-.timeline-card-wrapper:nth-child(odd) .card{transform:rotate(-.7deg)}
-.timeline-card-wrapper:nth-child(even) .card{transform:rotate(.7deg)}
-.card.timeline-style::before{content:'';position:absolute;top:-10px;right:20px;width:48px;height:16px;background:rgba(224,159,159,.6);transform:rotate(4deg);border-left:2px dotted rgba(255,255,255,.8);border-right:2px dotted rgba(255,255,255,.8)}
-.pack-category-card,.expense-card,.balance-card,.settlement-summary{border:2.5px solid var(--ink)!important;box-shadow:var(--shadow);border-radius:var(--radius-card)}
-.modal-content{border:3px solid var(--ink);box-shadow:5px 5px 0 var(--ink);border-radius:var(--radius-card)}
-.btn{border:2.5px solid var(--ink);box-shadow:2px 2px 0 var(--ink);border-radius:14px 10px 15px 11px}
-.btn-outline{background:#fff}
-.fab{border:2.5px solid var(--ink);box-shadow:3px 3px 0 var(--ink);background:var(--theme-pink)}
-.bottom-nav{border-top:2.5px solid var(--ink)}
-.nav-item.active{color:var(--ink);font-weight:700}
-.admin-lock-btn{border:2px solid var(--ink)}
-.flight-visual,.transport-visual,.event-note-box{border:2px dashed #b9afa4}
-/* 倒數貼紙 */
-#cd-sticker{align-self:flex-start;background:#FFF3B0;border:2.5px solid var(--ink);box-shadow:var(--shadow);border-radius:20px 14px 22px 12px;padding:6px 14px;font-weight:700;transform:rotate(-2deg);margin:0 0 12px 2px;display:inline-flex;gap:8px;align-items:center}
-#cd-sticker .plane{display:inline-block;animation:fly 2.4s ease-in-out infinite}
-@keyframes fly{0%,100%{transform:translate(0,0) rotate(-8deg)}50%{transform:translate(8px,-6px) rotate(6deg)}}
-/* 行程照片 / 路線 / 旅程按鈕 */
-.evt-img{width:100%;max-height:190px;object-fit:cover;border:3px solid #fff;outline:2px solid var(--ink);border-radius:6px;margin:8px 0;transform:rotate(-1deg);box-shadow:2px 3px 0 rgba(0,0,0,.2)}
-.route-btn{display:inline-block;margin:0 0 18px 20px;padding:6px 14px;background:#CFE8DC;border:2.5px solid var(--ink);box-shadow:var(--shadow);border-radius:16px 12px 18px 10px;color:var(--ink);text-decoration:none;font-weight:700;transform:rotate(1.5deg)}
-#trip-btn{position:fixed;left:15px;bottom:calc(80px + env(safe-area-inset-bottom));z-index:900;background:#E3D081;border:2.5px solid var(--ink);box-shadow:var(--shadow);border-radius:16px 12px 18px 10px;padding:6px 12px;font-weight:700;font-size:.85rem;cursor:pointer;transform:rotate(-2deg)}
+:root{--ink:#4A423D;--line:#E6DCD2;--font-serif:'Mali','Noto Sans TC',cursive;--font-sans:'Mali','Noto Sans TC',sans-serif;--shadow:0 3px 10px rgba(74,66,61,.10);--radius-card:16px}
+body{background-image:radial-gradient(#e9e2d9 1.1px,transparent 1.1px);background-size:18px 18px}
+.weather-widget-float{display:none!important}
+#date-list,#rate-tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:500;margin-top:0;padding:10px 20px;background:rgba(248,248,246,.95);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);border-bottom:1px dashed #d8cfc4}
+.date-card{border:1.5px solid var(--line);box-shadow:0 2px 5px rgba(0,0,0,.05)}
+.date-card.active{background:var(--theme-pink);color:#fff;border-color:var(--theme-pink)}
+.rate-tab{width:auto;padding:0 18px;font-size:1rem;font-weight:700;white-space:nowrap}
+.card.timeline-style{overflow:visible;border-top:1.5px solid var(--line);border-right:1.5px solid var(--line);border-bottom:1.5px solid var(--line)}
+.pack-category-card,.expense-card,.balance-card,.settlement-summary{border-top:1.5px solid var(--line);border-right:1.5px solid var(--line);border-bottom:1.5px solid var(--line);box-shadow:var(--shadow)}
+.modal-content{border:1.5px solid var(--line)}
+.btn{box-shadow:0 2px 6px rgba(0,0,0,.12)}
+.fab{background:var(--theme-pink)}
+.bottom-nav{border-top:1px solid var(--line)}
+.flight-visual,.transport-visual,.event-note-box{border:1px dashed #d3c9be}
+#cd-sticker{align-self:flex-start;background:#FFF3B0;border:1.5px solid var(--line);box-shadow:var(--shadow);border-radius:18px;padding:6px 14px;font-weight:700;margin:0 0 12px 2px;display:inline-flex;gap:8px;align-items:center}
+#cd-sticker .plane{display:inline-block;animation:bob 2s ease-in-out infinite}
+.evt-img{width:100%;max-height:190px;object-fit:cover;border-radius:12px;margin:8px 0}
+.route-btn{display:inline-block;margin:0 0 18px 20px;padding:6px 14px;background:#CFE8DC;border-radius:14px;box-shadow:var(--shadow);color:var(--ink);text-decoration:none;font-weight:700}
+#trip-btn{position:fixed;left:15px;bottom:calc(80px + env(safe-area-inset-bottom));z-index:900;background:#E3D081;box-shadow:var(--shadow);border-radius:14px;padding:6px 12px;font-weight:700;font-size:.85rem;cursor:pointer}
+/* 須知 / 評分 */
+.info-card{background:#fff;border:1.5px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:14px;margin-bottom:14px}
+.muted{color:#999;font-size:.85rem}
+.sec-h{display:flex;justify-content:space-between;align-items:center;margin:24px 0 10px;font-weight:700;font-size:1.1rem}
+.sec-h .btn{width:auto;padding:6px 12px;margin:0;font-size:.85rem}
+.ed{color:#aaa;cursor:pointer;font-size:.85rem;margin-top:8px}
+.cd-card{position:relative;text-align:center;background:linear-gradient(#FFF7E0,#FDEBEB);border:1.5px solid var(--line);border-radius:20px;padding:26px 10px 20px;box-shadow:var(--shadow)}
+.gender{position:absolute;top:10px;right:12px;display:flex;gap:6px}
+.gender span{width:28px;height:28px;border-radius:50%;background:#fff;border:1.5px solid var(--line);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:.9rem}
+.gender span.on{background:var(--theme-pink);color:#fff;border-color:var(--theme-pink)}
+.cd-scene{font-size:4rem;line-height:1.2}
+.cd-p{display:inline-block;animation:bob 1.6s ease-in-out infinite}
+.cd-prop{display:inline-block;font-size:2.6rem;margin-left:6px;animation:bob 2.2s ease-in-out infinite .4s}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.cd-days{font-size:1.5rem;font-family:var(--font-serif);margin-top:6px}
+.cd-days b{font-size:2.6rem;color:var(--theme-brown)}
+.cd-sub{color:var(--text-secondary);font-size:.9rem}
+.wx-row{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px}
+.wx-c{flex:0 0 76px;background:#fff;border:1.5px solid var(--line);border-radius:14px;text-align:center;padding:8px 4px;font-size:.8rem}
+.wx-c div:nth-child(2){font-size:1.6rem}
+.fl-row{display:flex;justify-content:space-between;align-items:center;text-align:center}
+.fl-row b{display:block;font-size:1.4rem;font-family:var(--font-serif)}
+.fl-row small{color:#888}
+.fl-mid{flex:1;border-bottom:2px dashed #ddd;margin:0 12px;padding-bottom:4px}
+.fl-mid small{display:block}
+.bag{white-space:pre-wrap;background:#F8F8F6;border-radius:10px;padding:8px;margin-top:8px;font-size:.9rem}
+summary{cursor:pointer;font-weight:700}
+.pl-h{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.avg{background:#FFF3B0;border-radius:10px;padding:2px 8px;font-size:.8rem}
+.cr{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.cr select{width:100px;margin:4px 0}
+.tr-row{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%}
+.tr-row select{width:60%;margin:4px 0}
