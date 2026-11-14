@@ -1,5 +1,6 @@
 /* 旅遊小幫手 附加功能（完整版）：倒數貼紙、照片、今日路線、Firebase 同步、須知頁、評分頁 */
 (function () {
+  { const q = (document.currentScript && document.currentScript.src.split('?')[1]) || Date.now(); if (!document.getElementById('addon-css')) { const l = document.createElement('link'); l.id = 'addon-css'; l.rel = 'stylesheet'; l.href = 'addon.css?' + q; document.head.appendChild(l); } }
   const FIREBASE_CONFIG = { apiKey: "AIzaSyAwVNxRT6VMje1ZutvaOx-oL36MsaF8f1w", authDomain: "travel-plan-46bc4.firebaseapp.com", databaseURL: "https://travel-plan-46bc4-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "travel-plan-46bc4", appId: "1:995767265783:web:a12f909fda79f5d4d766f2" };
 
   const $ = id => document.getElementById(id);
@@ -107,6 +108,10 @@
   const road = y => `<line class="k-wave" x1="0" y1="${y}" x2="260" y2="${y}" stroke="#cbbfb3" stroke-width="3" stroke-dasharray="14 12"/>`;
   const rects = (xs, y, w, h) => xs.map(x => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="3" fill="#CDEBFF"/>`).join('');
   // ---------- 辦公室場景 + 互動 ----------
+  function officeWalk(g) {
+    const f = g === 'f', dc = f ? '#C9B8E8' : '#fff';
+    return `<g class="k-walkw"><g class="o-w"><rect x="148" y="92" width="22" height="54" rx="4" fill="#BFD7F2"/><rect x="152" y="96" width="14" height="4" rx="2" fill="#fff"/><rect x="157" y="100" width="4" height="5" fill="#7FA6D9"/><rect class="drip" x="158" y="105" width="2" height="8" fill="#7FA6D9"/></g><g class="k-walk hit">${hairB(g, 70, 84, .55)}<rect class="k-leg" x="62" y="128" width="7" height="18" rx="3" fill="#7A6A5E"/><rect class="k-leg" style="animation-direction:alternate-reverse" x="71" y="128" width="7" height="18" rx="3" fill="#7A6A5E"/><rect x="58" y="98" width="24" height="32" rx="9" fill="${dc}" stroke="#d9d2ca"/>${pHead(g, 70, 84, .55)}<line x1="80" y1="104" x2="88" y2="114" stroke="${f ? SK : '#E8E1DA'}" stroke-width="6" stroke-linecap="round"/><g class="cup-w"><rect x="86" y="110" width="8" height="10" rx="2" fill="#CDEBFF" stroke="#9fc5de"/></g><circle cx="88" cy="115" r="3.5" fill="${SK}"/><text class="x-q2" x="78" y="66" font-size="13">❓</text></g></g>`;
+  }
   function office(g) {
     const f = g === 'f', hc = '#2B2626', dc = f ? '#C9B8E8' : '#fff';
     const arm = (a, b, c, d) => `<line x1="${a}" y1="${b}" x2="${c}" y2="${d}" stroke="${f ? SK : '#E8E1DA'}" stroke-width="8" stroke-linecap="round"/>`;
@@ -116,7 +121,7 @@
     const bld = [[12, 34, 12], [26, 22, 14], [42, 30, 10], [54, 16, 16], [72, 28, 14]].map(([x, y, w], i) => `<rect x="${x}" y="${y}" width="${w}" height="${60 - y}" fill="${i % 2 ? '#8AA3BA' : '#9DB4C8'}"/><rect class="k-twinkle" style="animation-delay:${i * .5}s" x="${x + 3}" y="${y + 5}" width="3" height="3" fill="#FFF3B0"/>`).join('');
     const face = `<g transform="translate(70 56)"><g class="hd"><circle r="26" fill="${SK}"/><path d="M-27 -2C-30 -34 -10 -36 0 -36C12 -36 30 -34 27 -2C22 -14 12 -20 0 -20C-12 -20 -22 -14 -27 -2Z" fill="${hc}"/><g class="ey"><g class="k-blink"><ellipse cx="-10" cy="2" rx="3" ry="4.2" fill="${hc}"/><ellipse cx="10" cy="2" rx="3" ry="4.2" fill="${hc}"/></g></g>${[-10, 10].map(x => `<circle cx="${x}" cy="2" r="9" fill="rgba(255,255,255,.3)" stroke="#4A423D" stroke-width="1.6"/>`).join('')}<line x1="-1" y1="2" x2="1" y2="2" stroke="#4A423D" stroke-width="1.6"/><line class="bl" x1="-16" y1="-12" x2="-5" y2="-12" stroke="${hc}" stroke-width="2.2" stroke-linecap="round"/><line class="br" x1="5" y1="-12" x2="16" y2="-12" stroke="${hc}" stroke-width="2.2" stroke-linecap="round"/><circle class="bk" cx="-17" cy="12" r="4"/><circle class="bk" cx="17" cy="12" r="4"/><path class="m-n" d="M-5 14Q0 18 5 14" stroke="#B5655A" stroke-width="2" fill="none" stroke-linecap="round"/><ellipse class="m-a" cx="0" cy="15" rx="6" ry="5" fill="#C0392B"/><line class="m-t" x1="-4" y1="15" x2="4" y2="15" stroke="#B5655A" stroke-width="2" stroke-linecap="round"/><circle class="m-w" cx="0" cy="15" r="3" fill="#B5655A"/></g><text class="x-ang" x="16" y="-26" font-size="16">💢</text><text class="x-q" x="18" y="-28" font-size="16">❓</text><text class="x-z" x="18" y="-28" font-size="14">💤</text></g>`;
     return '<defs><linearGradient id="dg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#B8977A"/><stop offset="1" stop-color="#B8977A" stop-opacity="0"/></linearGradient></defs><rect x="8" y="8" width="86" height="52" fill="#CFE8F5"/>' + bld + '<rect x="8" y="8" width="86" height="52" fill="none" stroke="#bfb3a5" stroke-width="3"/><rect x="5" y="58" width="92" height="4" fill="#bfb3a5"/>'
-      + `<g class="hit">${f ? `<g transform="translate(70 56)"><g class="hd"><path d="M-30 -6C-36 -40 36 -40 30 -6L33 32Q0 40 -33 32Z" fill="${hc}"/></g></g>` : ''}<rect x="52" y="80" width="36" height="40" rx="12" fill="${dc}" stroke="#d9d2ca"/>${f ? '<path d="M62 80Q70 90 78 80Z" fill="#fff"/>' : '<polygon points="70,82 66,90 70,104 74,90" fill="#4F86C6"/>'}${face}</g>`
+      + `<g class="hit seat">${f ? `<g transform="translate(70 56)"><g class="hd"><path d="M-30 -6C-36 -40 36 -40 30 -6L33 32Q0 40 -33 32Z" fill="${hc}"/></g></g>` : ''}<rect x="52" y="80" width="36" height="40" rx="12" fill="${dc}" stroke="#d9d2ca"/>${f ? '<path d="M62 80Q70 90 78 80Z" fill="#fff"/>' : '<polygon points="70,82 66,90 70,104 74,90" fill="#4F86C6"/>'}${face}</g>`
       + '<rect x="4" y="104" width="192" height="8" rx="3" fill="#C9A98B"/><rect x="4" y="112" width="192" height="38" fill="url(#dg)"/><line x1="100" y1="114" x2="100" y2="150" stroke="#a5846a"/>'
       + stack(8, 34, ['#F3E3C3', '#fff', '#E8D0A9', '#D8E2EE', '#fff', '#F3E3C3', '#E8D0A9', '#fff']) + stack(44, 14, ['#E8D0A9', '#fff', '#D8E2EE'])
       + '<rect x="56" y="100" width="30" height="4" rx="1.5" fill="#E8E1DA"/><rect class="cup-s" x="89" y="94" width="7" height="10" rx="1.5" fill="#CDEBFF" stroke="#9fc5de"/><rect x="98" y="98" width="12" height="6" rx="2" fill="#4A4A55"/><rect x="99" y="95" width="10" height="3" rx="1.5" fill="#6B6B78"/>'
@@ -125,7 +130,7 @@
       + `<g class="o-a a-stretch">${arm(56, 90, 36, 54)}${arm(84, 90, 104, 54)}${hand(35, 51)}${hand(105, 51)}</g>`
       + `<g class="o-a a-drink">${arm(84, 92, 79, 82)}<rect x="66" y="70" width="8" height="10" rx="2" fill="#CDEBFF" stroke="#9fc5de"/>${hand(78, 80)}</g>`
       + `<g class="o-a a-files">${arm(58, 92, 52, 97)}<rect class="k-lid" x="44" y="88" width="14" height="10" fill="#fff" stroke="#d6c7ad"/>${hand(52, 98)}</g>`
-      + `<g class="o-a a-phone">${arm(84, 92, 90, 70)}<rect x="86" y="54" width="6" height="18" rx="3" fill="#4A4A55" transform="rotate(10 89 63)"/>${hand(90, 71)}${hand(66, 101, 'k-tapL')}</g>`;
+      + `<g class="o-a a-phone">${arm(84, 92, 90, 70)}<rect x="86" y="54" width="6" height="18" rx="3" fill="#4A4A55" transform="rotate(10 89 63)"/>${hand(90, 71)}${hand(66, 101, 'k-tapL')}</g>` + officeWalk(g);
   }
   const SC = { s: 'type', f: 'look', n: 0, t: 0, kind: '', left: 7 };
   const SAY = { pack: { 7: ['要帶幾套衣服...?'], 6: ['要帶幾套衣服...?'], 5: ['還有什麼要帶的嗎?'], 4: ['行動電源一定要放隨身包包...'], 3: ['其實只要有帶護照和信用卡就夠了吧!'] }, cash: ['不要偷看我的密碼!', '我忘記領錢了!', '帶這麼多錢夠嗎?'], sleep: ['好興奮!睡不著!'] };
@@ -143,7 +148,7 @@
   function bindScene(kind, left) {
     SC.kind = kind; SC.left = left; const v = $('cd-svg'); if (!v) return; applyS();
     const tok = SC.tok = (SC.tok || 0) + 1;
-    if (kind === 'sleep') { const run = () => { if (tok !== SC.tok) return; setTimeout(() => { if (tok !== SC.tok) return; setBubble('好興奮!睡不著!', 100, 44); setTimeout(() => { if (tok === SC.tok) setBubble(''); }, 2200); }, 7600); setTimeout(run, 10000); }; run(); }
+    if (kind === 'sleep') { const run = () => { if (tok !== SC.tok) return; setTimeout(() => { if (tok !== SC.tok) return; setBubble('好興奮!睡不著!', 150, 28); setTimeout(() => { if (tok === SC.tok) setBubble(''); }, 2200); }, 7600); setTimeout(run, 10000); }; run(); }
     v.onclick = ev => {
       if (kind === 'work') { if (ev.target.closest('.hit')) poke(); return; }
       if (kind === 'court') { const w = ev.target.closest('[data-who]'); if (!w) return; setBubble(pick(COURT[w.dataset.who]), +w.dataset.ax, +w.dataset.ay); clearTimeout(SC.bt); SC.bt = setTimeout(() => setBubble(''), 2800); return; }
@@ -151,7 +156,7 @@
       setBubble(pick(L)); clearTimeout(SC.bt); SC.bt = setTimeout(() => setBubble(''), 2800);
     };
   }
-  setInterval(() => { if (SC.kind === 'work' && SC.f === 'look' && $('cd-svg')) { SC.s = pick(['type', 'type', 'stretch', 'drink', 'files', 'phone']); applyS(); } }, 5000);
+  setInterval(() => { if (SC.kind === 'work' && SC.f === 'look' && $('cd-svg')) { SC.s = pick(['type', 'type', 'stretch', 'drink', 'files', 'phone', 'walk', 'water']); applyS(); } }, 5000);
 
   // ---------- 法庭小彩蛋 ----------
   const COURT = { J: ['原告請求權基礎為何?', '原告訴之聲明?', '被告答辯聲明?', '有沒有和解意願?', '有無意見?', '定宣判期日!', '有無證據請求調查?', '講慢一點，書記官打字很辛苦'], C: ['麻煩講慢一點...', '好累...'], R: ['感覺又要拖庭了...', '下一庭是誰?'], L: ['詳如歷次書狀所載', '如書狀所載', '再具狀表示意見', '有和解意願', '謝謝庭上!謝謝書座!'], O: ['法官我跟你說他很可惡...', '我這個很複雜...', '我沒有見過這種人!!!', '你不了解!!!'] };
@@ -177,13 +182,13 @@
     const arm = (a, b, c, d) => `<line x1="${a}" y1="${b}" x2="${c}" y2="${d}" stroke="${f ? SK : '#E8E1DA'}" stroke-width="8" stroke-linecap="round"/>`;
     const hand = (x, y, c) => `<circle ${c ? `class="${c}"` : ''} cx="${x}" cy="${y}" r="4.5" fill="${SK}"/>`;
     const sit = x => `${hairB(g, x, 76, .8)}<rect x="${x - 20}" y="122" width="18" height="10" rx="5" fill="#7A6A5E"/><rect x="${x + 2}" y="122" width="18" height="10" rx="5" fill="#7A6A5E"/><rect x="${x - 14}" y="94" width="28" height="32" rx="10" fill="${dc}"/>${pHead(g, x, 76, .8)}`;
-    const stand = (x, c) => `<g ${c ? `class="${c}"` : ''}>${hairB(g, x, 52, .8)}<rect x="${x - 14}" y="70" width="28" height="38" rx="10" fill="${dc}"/><rect x="${x - 10}" y="106" width="8" height="22" rx="4" fill="#7A6A5E"/><rect x="${x + 2}" y="106" width="8" height="22" rx="4" fill="#7A6A5E"/>${pHead(g, x, 52, .8)}</g>`;
+    const stand = (x, c, ex) => `<g ${c ? `class="${c}"` : ''}>${hairB(g, x, 52, .8)}<rect x="${x - 14}" y="70" width="28" height="38" rx="10" fill="${dc}"/><rect x="${x - 10}" y="106" width="8" height="22" rx="4" fill="#7A6A5E"/><rect x="${x + 2}" y="106" width="8" height="22" rx="4" fill="#7A6A5E"/>${pHead(g, x, 52, .8)}${ex || ''}</g>`;
     const stuff = n => ['#A0C4E3', '#F3B6B6', '#F6D365', '#BFE0C6'].slice(0, n).map((c, i) => `<rect x="124" y="${122 - i * 9}" width="44" height="8" rx="3" fill="${c}"/>`).join('');
     const open = n => `<rect x="118" y="54" width="56" height="40" rx="6" fill="#D98E5F"/><rect x="118" y="92" width="56" height="42" rx="6" fill="#E8A87C"/><rect x="123" y="96" width="46" height="34" rx="4" fill="#F5DEC8"/>${stuff(n)}`;
     const bag = x => `<rect x="${x}" y="104" width="26" height="28" rx="9" fill="#7FA6D9"/><rect x="${x + 5}" y="116" width="16" height="10" rx="3" fill="#5E87BC"/>`;
     const sh = '<ellipse cx="100" cy="138" rx="90" ry="6" fill="rgba(0,0,0,.06)"/>';
     if (left >= 6) return sh + open(0) + sit(52) + '<rect x="68" y="118" width="22" height="8" rx="3" fill="#A0C4E3"/><rect class="k-move" x="70" y="108" width="14" height="10" rx="2" fill="#F3B6B6"/>' + arm(62, 102, 74, 114) + hand(75, 115, 'k-tapL');
-    if (left === 5) return sh + '<rect x="4" y="96" width="30" height="6" rx="2" fill="#C9A98B"/><rect x="8" y="102" width="4" height="30" fill="#B8977A"/><rect x="26" y="102" width="4" height="30" fill="#B8977A"/><rect x="8" y="82" width="7" height="14" rx="2" fill="#7FA6D9"/><rect x="18" y="86" width="9" height="10" rx="2" fill="#E09F9F"/>' + open(2) + stand(70, 'k-turn') + arm(60, 80, 46, 92) + hand(46, 93) + '<rect class="k-move" x="84" y="92" width="7" height="14" rx="2" fill="#7FA6D9"/>';
+    if (left === 5) return sh + '<rect x="4" y="96" width="30" height="6" rx="2" fill="#C9A98B"/><rect x="8" y="102" width="4" height="30" fill="#B8977A"/><rect x="26" y="102" width="4" height="30" fill="#B8977A"/><rect x="8" y="82" width="7" height="14" rx="2" fill="#7FA6D9"/><rect x="18" y="86" width="9" height="10" rx="2" fill="#E09F9F"/>' + open(2) + stand(70, 'k-turn', arm(60, 80, 46, 92) + hand(46, 93)) + '<rect class="k-move" x="84" y="92" width="7" height="14" rx="2" fill="#7FA6D9"/>';
     if (left === 4) return sh + '<rect x="118" y="90" width="56" height="42" rx="6" fill="#E8A87C"/><rect x="118" y="84" width="56" height="12" rx="6" fill="#D98E5F"/><rect x="138" y="78" width="16" height="6" rx="3" fill="#a9754f"/>' + sit(56) + bag(82) + arm(66, 102, 84, 112) + hand(85, 113, 'k-tapL') + '<circle cx="20" cy="142" r="4" fill="none" stroke="#C9A24B" stroke-width="2"/><rect x="24" y="141" width="10" height="3" fill="#C9A24B"/><rect x="44" y="138" width="14" height="9" rx="2" fill="#8A5A44"/><rect x="66" y="141" width="26" height="5" rx="2.5" fill="#E09F9F"/><rect x="100" y="138" width="11" height="9" rx="2" fill="#4C8C6A"/>';
     return sh + '<rect x="132" y="48" width="40" height="84" rx="7" fill="#E8A87C"/><line x1="152" y1="52" x2="152" y2="130" stroke="#a9754f" stroke-width="2" stroke-dasharray="3 2"/><rect x="144" y="40" width="16" height="8" rx="3" fill="#a9754f"/>' + bag(102) + stand(60) + arm(72, 80, 86, 66) + hand(87, 64) + '<g class="k-bob"><rect x="84" y="46" width="14" height="18" rx="2" fill="#4C8C6A"/><circle cx="91" cy="55" r="3.5" fill="none" stroke="#E8D28A"/></g>';
   }
@@ -201,11 +206,10 @@
   }
   function sleepIn(g) {
     const f = g === 'f', hc = '#2B2626';
-    const hd = `<g transform="translate(58 78) scale(.9)">${f ? `<path d="M-30 -6C-36 -40 36 -40 30 -6L33 32Q0 40 -33 32Z" fill="${hc}"/>` : ''}<circle r="26" fill="${SK}"/><path d="M-27 -2C-30 -34 -10 -36 0 -36C12 -36 30 -34 27 -2C22 -14 12 -20 0 -20C-12 -20 -22 -14 -27 -2Z" fill="${hc}"/><g class="e-cl"><path d="M-15 4Q-10 9 -5 4M5 4Q10 9 15 4" stroke="${hc}" stroke-width="2.4" fill="none" stroke-linecap="round"/></g><g class="e-op"><circle cx="-10" cy="3" r="4" fill="${hc}"/><circle cx="10" cy="3" r="4" fill="${hc}"/></g><circle cx="-17" cy="12" r="4" fill="#FFB5B5" opacity=".6"/><circle cx="17" cy="12" r="4" fill="#FFB5B5" opacity=".6"/><path d="M-5 14Q0 18 5 14" stroke="#B5655A" stroke-width="2" fill="none" stroke-linecap="round"/></g>`;
-    return '<path d="M176 12a14 14 0 1 0 8 24a11 11 0 1 1-8-24z" fill="#F6D365"/><text class="k-twinkle" x="20" y="30" font-size="14" fill="#F6D365">✦</text><text class="k-twinkle" style="animation-delay:.6s" x="130" y="40" font-size="12" fill="#F6D365">✦</text>'
-      + '<rect x="12" y="104" width="176" height="14" rx="5" fill="#B8977A"/><rect x="16" y="118" width="6" height="22" fill="#B8977A"/><rect x="178" y="118" width="6" height="22" fill="#B8977A"/><rect x="26" y="86" width="60" height="22" rx="11" fill="#fff" stroke="#eee"/>'
-      + '<g class="k-roll">' + hd + '<rect x="44" y="96" width="140" height="22" rx="14" fill="#BFD7F2"/><rect x="44" y="106" width="140" height="6" fill="#A6C6EB"/></g>'
-      + '<rect x="150" y="84" width="34" height="20" rx="3" fill="#C9A98B"/><circle cx="160" cy="80" r="5" fill="none" stroke="#4A423D" stroke-width="1.5"/><circle cx="172" cy="80" r="5" fill="none" stroke="#4A423D" stroke-width="1.5"/>';
+    const head = `<g transform="translate(100 40) scale(.85)">${f ? `<path d="M-30 -6C-36 -40 36 -40 30 -6L33 32Q0 40 -33 32Z" fill="${hc}"/>` : ''}<circle r="26" fill="${SK}"/><path d="M-27 -2C-30 -34 -10 -36 0 -36C12 -36 30 -34 27 -2C22 -14 12 -20 0 -20C-12 -20 -22 -14 -27 -2Z" fill="${hc}"/><g class="e-cl"><path d="M-15 4Q-10 9 -5 4M5 4Q10 9 15 4" stroke="${hc}" stroke-width="2.4" fill="none" stroke-linecap="round"/></g><g class="e-op"><circle cx="-10" cy="3" r="4" fill="${hc}"/><circle cx="10" cy="3" r="4" fill="${hc}"/></g><circle cx="-17" cy="12" r="4" fill="#FFB5B5" opacity=".6"/><circle cx="17" cy="12" r="4" fill="#FFB5B5" opacity=".6"/><path d="M-5 14Q0 18 5 14" stroke="#B5655A" stroke-width="2" fill="none" stroke-linecap="round"/></g>`;
+    return '<rect x="46" y="8" width="108" height="138" rx="12" fill="#fff" stroke="#E4D9CF" stroke-width="2"/><rect x="42" y="2" width="116" height="9" rx="3" fill="#B8977A"/><rect x="64" y="14" width="72" height="28" rx="13" fill="#F7F2FA" stroke="#E4D9CF"/>'
+      + '<g class="k-roll"><rect x="52" y="54" width="96" height="90" rx="14" fill="#BFD7F2"/><rect x="52" y="54" width="96" height="12" rx="6" fill="#A6C6EB"/>' + head + '</g>'
+      + '<rect x="162" y="14" width="32" height="34" rx="6" fill="#C9A98B"/><circle cx="171" cy="31" r="5.5" fill="none" stroke="#4A423D" stroke-width="1.6"/><circle cx="184" cy="31" r="5.5" fill="none" stroke="#4A423D" stroke-width="1.6"/><ellipse cx="28" cy="122" rx="7" ry="4" fill="#E8A8A8"/><ellipse cx="28" cy="134" rx="7" ry="4" fill="#E8A8A8"/>';
   }
 
   function scene(g, k, left) {
