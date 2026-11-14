@@ -7,6 +7,10 @@
   const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
   const trip = new URLSearchParams(location.search).get('trip') || 'default';
+  // 管理員模式閒置自動上鎖（分鐘；設 0 代表不自動上鎖）
+  const AUTO_LOCK_MIN = 5; let lastAct = Date.now();
+  ['click', 'touchstart', 'keydown'].forEach(e => document.addEventListener(e, () => { lastAct = Date.now(); }, true));
+  setInterval(() => { if (AUTO_LOCK_MIN && typeof isAdminMode !== 'undefined' && isAdminMode && Date.now() - lastAct > AUTO_LOCK_MIN * 60000) toggleAdminMode(); }, 20000);
   const me = localStorage.voter_id || (localStorage.voter_id = 'v' + Math.random().toString(36).slice(2, 10));
   let votes = {}, rateSel = 0, openD = {};
   const I = () => data.info = Object.assign({ flights: [], hotels: [], notes: [] }, data.info || {});
@@ -162,16 +166,18 @@
   const COURT = { J: ['原告請求權基礎為何?', '原告訴之聲明?', '被告答辯聲明?', '有沒有和解意願?', '有無意見?', '定宣判期日!', '有無證據請求調查?', '講慢一點，書記官打字很辛苦'], C: ['麻煩講慢一點...', '好累...'], R: ['感覺又要拖庭了...', '下一庭是誰?'], L: ['詳如歷次書狀所載', '如書狀所載', '再具狀表示意見', '有和解意願', '謝謝庭上!謝謝書座!'], O: ['法官我跟你說他很可惡...', '我這個很複雜...', '我沒有見過這種人!!!', '你不了解!!!'] };
   const courtDay = () => { const d = new Date(); return (d.getFullYear() * 372 + d.getMonth() * 31 + d.getDate()) % 5 === 0; };
   function court(g) {
-    const f = g === 'f', hc = '#2B2626', onLeft = new Date().getDate() % 2 === 0, LX = onLeft ? 50 : 150, OX = onLeft ? 150 : 50;
+    const f = g === 'f', hc = '#2B2626', silver = '#C9CED6', onLeft = new Date().getDate() % 2 === 0, LX = onLeft ? 50 : 150, OX = onLeft ? 150 : 50, dir = OX > 100 ? -1 : 1;
     const hd = (x, y, s, c) => `<g transform="translate(${x} ${y}) scale(${s})"><circle r="26" fill="${SK}"/><path d="M-27 -2C-30 -34 -10 -36 0 -36C12 -36 30 -34 27 -2C22 -14 12 -20 0 -20C-12 -20 -22 -14 -27 -2Z" fill="${c || hc}"/><circle cx="-9" cy="3" r="3" fill="${hc}"/><circle cx="9" cy="3" r="3" fill="${hc}"/><path d="M-5 13Q0 17 5 13" stroke="#B5655A" stroke-width="3" fill="none"/></g>`;
     const rb = (x, y, w, h, c) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="5" fill="${c}"/>`;
     const desk = (x, w) => `<rect x="${x}" y="90" width="${w}" height="8" rx="2" fill="#B8977A"/><rect x="${x + 8}" y="82" width="16" height="8" rx="1" fill="#4A4A55"/>`;
     const table = x => `<rect x="${x - 34}" y="118" width="68" height="10" rx="3" fill="#B8977A"/><rect x="${x - 26}" y="112" width="20" height="6" fill="#fff" stroke="#d6c7ad"/><rect x="${x - 4}" y="113" width="22" height="5" fill="#F3E3C3" stroke="#d6c7ad"/>`;
-    return `<g data-who="J" data-ax="100" data-ay="16" class="hit">${rb(88, 40, 24, 22, '#4F6FA8')}<rect x="97" y="40" width="6" height="22" fill="#fff" opacity=".6"/>${hd(100, 30, .5)}</g><rect x="64" y="54" width="72" height="14" rx="3" fill="#8A6F55"/>`
-      + `<g data-who="C" data-ax="40" data-ay="54" class="hit">${rb(60, 78, 22, 26, '#1f1f1f')}${hd(71, 70, .45)}</g>${desk(52, 38)}<circle class="k-tapL" cx="66" cy="92" r="3" fill="${SK}"/><circle class="k-tapR" cx="76" cy="92" r="3" fill="${SK}"/>`
-      + `<g data-who="R" data-ax="160" data-ay="54" class="hit">${rb(118, 78, 22, 26, '#1f1f1f')}${hd(129, 70, .45)}</g>${desk(110, 38)}`
-      + `<g data-who="O" data-ax="${OX}" data-ay="64" class="hit">${rb(OX - 13, 94, 26, 32, '#E8A87C')}${hd(OX, 82, .55, '#6b4a3a')}</g>${table(OX)}`
-      + `<g data-who="L" data-ax="${LX}" data-ay="64" class="hit">${f ? `<rect x="${LX - 15}" y="78" width="30" height="24" rx="9" fill="${hc}"/>` : ''}${rb(LX - 14, 94, 28, 32, '#2B2626')}<polygon points="${LX - 6},94 ${LX + 6},94 ${LX + 4},126 ${LX - 4},126" fill="#C9CED6"/>${hd(LX, 82, .55)}</g>${table(LX)}`;
+    const sleeve = (x1, y1, x2, y2, c) => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${c}" stroke-width="6" stroke-linecap="round"/>`;
+    return `<g data-who="J" data-ax="100" data-ay="16" class="hit"><rect x="88" y="40" width="24" height="22" rx="6" fill="#4F6FA8" stroke="#2F4E86" stroke-width="1.5"/><path d="M93 40L100 54L107 40" fill="#7F9BD0" stroke="#2F4E86" stroke-width="1.5"/><g class="k-nod">${hd(100, 30, .5)}</g></g><rect x="64" y="54" width="72" height="14" rx="3" fill="#8A6F55"/>`
+      + `<g data-who="C" data-ax="40" data-ay="54" class="hit">${rb(60, 78, 22, 26, '#1f1f1f')}<g class="k-bob">${hd(71, 70, .45)}</g></g>${desk(52, 38)}<circle class="k-tapL" cx="66" cy="92" r="3" fill="${SK}"/><circle class="k-tapR" cx="76" cy="92" r="3" fill="${SK}"/>`
+      + `<g data-who="R" data-ax="160" data-ay="54" class="hit">${rb(118, 78, 22, 26, '#1f1f1f')}<g class="k-sleepy">${hd(129, 70, .45)}</g></g>${desk(110, 38)}<rect class="k-lid" x="122" y="90" width="9" height="6" fill="#fff" stroke="#d6c7ad"/><circle class="k-tapL" cx="124" cy="94" r="2.6" fill="${SK}"/><text class="k-twinkle" x="140" y="62" font-size="9" fill="#999">z</text>`
+      + `<g data-who="O" data-ax="${OX}" data-ay="64" class="hit">${rb(OX - 13, 94, 26, 32, '#E8A87C')}${hd(OX, 82, .55, '#6b4a3a')}</g>${table(OX)}<g class="k-flap">${sleeve(OX + dir * 11, 102, OX + dir * 24, 90, '#E8A87C')}<circle cx="${OX + dir * 25}" cy="88" r="3.5" fill="${SK}"/></g><text class="k-twinkle" x="${OX - 6}" y="66" font-size="12">💢</text>`
+      + `<g data-who="L" data-ax="${LX}" data-ay="64" class="hit">${hairB(g, LX, 82, .55)}${rb(LX - 14, 94, 28, 32, hc)}<path d="M${LX - 11} 94L${LX + 11} 94L${LX + 5} 126L${LX - 5} 126Z" fill="${silver}"/><path d="M${LX - 5} 94L${LX + 5} 94L${LX} 103Z" fill="${hc}"/>${pHead(g, LX, 82, .55)}</g>${table(LX)}`
+      + `${sleeve(LX - 12, 100, LX - 15, 114, hc)}<rect x="${LX - 19}" y="111" width="8" height="4" rx="1.5" fill="${silver}"/><circle class="k-tapL" cx="${LX - 15}" cy="118" r="3" fill="${SK}"/>${sleeve(LX + 12, 100, LX + 15, 114, hc)}<rect x="${LX + 11}" y="111" width="8" height="4" rx="1.5" fill="${silver}"/><circle class="k-tapR" cx="${LX + 15}" cy="118" r="3" fill="${SK}"/>`;
   }
 
   // ---------- 收行李（依剩餘天數）----------
