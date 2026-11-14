@@ -140,3 +140,7 @@ svg[data-f=wonder] .x-q2{display:inline}
 .p-gin{animation:kgin 9s infinite}@keyframes kgin{0%,40%{opacity:0}55%,100%{opacity:1}}
 .p-skyout{animation:kskyout 9s infinite}@keyframes kskyout{0%,35%{opacity:1}55%,100%{opacity:0}}
 .p-term{animation:kterm 9s ease-in infinite}@keyframes kterm{0%{transform:none}70%,100%{transform:translateX(-130px)}}
+
+/* 法庭小動作 */
+.k-nod{animation:knod 4s infinite}@keyframes knod{0%,70%{transform:none}80%{transform:translateY(2px) rotate(4deg)}90%,100%{transform:none}}
+.k-sleepy{transform-origin:center bottom;animation:ksleepy 6s ease-in-out infinite}@keyframes ksleepy{0%,100%{transform:none}50%{transform:rotate(9deg) translateY(1px)}}
