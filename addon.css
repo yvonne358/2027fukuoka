@@ -77,7 +77,7 @@ svg[data-s=type] .a-type,svg[data-s=stretch] .a-stretch,svg[data-s=drink] .a-dri
 svg[data-s=drink] .cup-s{display:none}
 .ey{transition:transform .2s}svg[data-f=look] .ey{transform:translateX(3px)}
 .hd{transition:transform .25s}
-svg[data-s=stretch][data-f=look] .hd{transform:rotate(-6deg)}
+svg[data-s=stretch][data-f=look] .hd{transform:rotate(-10deg) translateY(-2px)}
 svg[data-f=turn] .hd{transform:rotate(-8deg)}svg[data-f=wonder] .hd{transform:rotate(10deg)}
 svg[data-f=angry] .hd{animation:kshake .15s infinite}@keyframes kshake{50%{transform:translateX(1.5px) rotate(2deg)}}
 .bl,.br{transition:transform .2s}
@@ -88,3 +88,9 @@ svg[data-f=wonder] .br{transform:translateY(-3px)}
 .bk{fill:#FFB5B5;opacity:.5}svg[data-f=angry] .bk{fill:#FF6B6B;opacity:.9}
 svg[data-f=angry] .m-n,svg[data-f=tired] .m-n,svg[data-f=wonder] .m-n{display:none}
 svg[data-f=angry] .m-a,svg[data-f=tired] .m-t,svg[data-f=wonder] .m-w,svg[data-f=angry] .x-ang,svg[data-f=wonder] .x-q,svg[data-f=tired] .x-z{display:inline}
+
+/* 調整：切換鈕不被遮住、伸懶腰後仰 */
+.gender{z-index:3}.cd-card{padding-top:46px}
+svg[data-s=stretch] .hit,svg[data-s=stretch] .a-stretch{transform-box:view-box;transform-origin:70px 118px;transform:rotate(-5deg)}
+svg[data-s=stretch][data-f=look] .ey{transform:scaleY(.12)}
+svg[data-s=stretch][data-f=look] .m-n{display:none}svg[data-s=stretch][data-f=look] .m-w{display:inline}
