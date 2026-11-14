@@ -94,3 +94,8 @@ svg[data-f=angry] .m-a,svg[data-f=tired] .m-t,svg[data-f=wonder] .m-w,svg[data-f
 svg[data-s=stretch] .hit,svg[data-s=stretch] .a-stretch{transform-box:view-box;transform-origin:70px 118px;transform:rotate(-5deg)}
 svg[data-s=stretch][data-f=look] .ey{transform:scaleY(.12)}
 svg[data-s=stretch][data-f=look] .m-n{display:none}svg[data-s=stretch][data-f=look] .m-w{display:inline}
+
+/* 修正：人物頭部位移（縮放以左上角為原點）、對話框跟著說話的人 */
+.cd-scene svg [transform]{transform-box:view-box;transform-origin:0 0}
+.cd-scene{max-width:300px;margin:0 auto}
+.cd-bubble{transform:translate(-50%,-100%);white-space:normal;max-width:42%;text-align:center;line-height:1.3;width:max-content}
