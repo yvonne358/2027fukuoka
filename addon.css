@@ -103,3 +103,12 @@ svg[data-s=stretch][data-f=look] .m-n{display:none}svg[data-s=stretch][data-f=lo
 /* 收行李動畫 */
 .k-move{animation:kmove 2.6s ease-in-out infinite}@keyframes kmove{0%{transform:translate(0,0);opacity:1}70%{transform:translate(48px,-14px);opacity:1}100%{transform:translate(54px,2px);opacity:0}}
 .k-turn{transform-origin:center;animation:kturn 3s ease-in-out infinite}@keyframes kturn{0%,100%{transform:scaleX(1)}25%{transform:scaleX(.2)}50%{transform:scaleX(-1)}75%{transform:scaleX(.2)}}
+
+/* 領外幣 / 睡不著動畫 */
+.k-atm{animation:katm 8s infinite}@keyframes katm{0%{transform:none}3%{transform:translateX(-2px)}6%{transform:translateX(2px)}9%{transform:translateX(-2px)}12%{transform:translateX(2px)}15%{transform:translateX(-2px)}18%{transform:translateX(2px)}21%,100%{transform:none}}
+.k-bills{animation:kbills 8s infinite}@keyframes kbills{0%,24%{opacity:0;transform:none}25%{opacity:1;transform:none}45%{transform:translate(0,14px)}60%,85%{transform:translate(-34px,10px)}96%{opacity:1;transform:translate(-62px,20px)}100%{opacity:0;transform:translate(-62px,20px)}}
+.k-count{transform-origin:center;animation:kcount 8s infinite}@keyframes kcount{0%,59%{transform:none}64%{transform:rotate(6deg)}69%{transform:rotate(-6deg)}74%{transform:rotate(6deg)}79%{transform:rotate(-6deg)}85%,100%{transform:none}}
+.k-hands{animation:khands 8s infinite}@keyframes khands{0%,44%{opacity:0}46%,90%{opacity:1}94%,100%{opacity:0}}
+.k-roll{animation:kroll 10s infinite}@keyframes kroll{0%,35%{transform:none}43%{transform:translateX(-10px) rotate(-5deg)}51%{transform:translateX(10px) rotate(5deg)}59%{transform:translateX(-10px) rotate(-5deg)}67%{transform:translateX(10px) rotate(5deg)}75%,100%{transform:none}}
+.e-cl{animation:kcl 10s infinite}@keyframes kcl{0%,74%{opacity:1}76%,100%{opacity:0}}
+.e-op{animation:kop 10s infinite}@keyframes kop{0%,74%{opacity:0}76%,100%{opacity:1}}
