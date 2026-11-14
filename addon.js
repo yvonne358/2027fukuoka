@@ -130,7 +130,7 @@
   const SC = { s: 'type', f: 'look', n: 0, t: 0, kind: '', left: 7 };
   const SAY = { pack: { 7: ['要帶幾套衣服...?'], 6: ['要帶幾套衣服...?'], 5: ['還有什麼要帶的嗎?'], 4: ['行動電源一定要放隨身包包...'], 3: ['其實只要有帶護照和信用卡就夠了吧!'] }, cash: ['不要偷看我的密碼!', '我忘記領錢了!', '帶這麼多錢夠嗎?'], sleep: ['好興奮!睡不著!'] };
   const pick = a => a[Math.random() * a.length | 0];
-  function setBubble(t) { const b = $('cd-bubble'); if (b) { b.textContent = t; b.classList.toggle('on', !!t); } }
+  function setBubble(t, ax = 148, ay = 44) { const b = $('cd-bubble'); if (b) { b.style.left = ax / 2 + '%'; b.style.top = ay / 1.5 + '%'; b.textContent = t; b.classList.toggle('on', !!t); } }
   function applyS() { const v = $('cd-svg'); if (v) { v.dataset.s = SC.s; v.dataset.f = SC.f; } }
   function poke() {
     const rest = ['stretch', 'drink'].includes(SC.s), work = ['type', 'phone', 'files'].includes(SC.s);
@@ -144,7 +144,7 @@
     SC.kind = kind; SC.left = left; const v = $('cd-svg'); if (!v) return; applyS();
     v.onclick = ev => {
       if (kind === 'work') { if (ev.target.closest('.hit')) poke(); return; }
-      if (kind === 'court') { const w = ev.target.closest('[data-who]'); if (!w) return; setBubble(pick(COURT[w.dataset.who])); clearTimeout(SC.bt); SC.bt = setTimeout(() => setBubble(''), 2800); return; }
+      if (kind === 'court') { const w = ev.target.closest('[data-who]'); if (!w) return; setBubble(pick(COURT[w.dataset.who]), +w.dataset.ax, +w.dataset.ay); clearTimeout(SC.bt); SC.bt = setTimeout(() => setBubble(''), 2800); return; }
       const L = kind === 'pack' ? (SAY.pack[left] || SAY.pack[7]) : SAY[kind]; if (!L) return;
       setBubble(pick(L)); clearTimeout(SC.bt); SC.bt = setTimeout(() => setBubble(''), 2800);
     };
@@ -160,11 +160,11 @@
     const rb = (x, y, w, h, c) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="5" fill="${c}"/>`;
     const desk = (x, w) => `<rect x="${x}" y="90" width="${w}" height="8" rx="2" fill="#B8977A"/><rect x="${x + 8}" y="82" width="16" height="8" rx="1" fill="#4A4A55"/>`;
     const table = x => `<rect x="${x - 34}" y="118" width="68" height="10" rx="3" fill="#B8977A"/><rect x="${x - 26}" y="112" width="20" height="6" fill="#fff" stroke="#d6c7ad"/><rect x="${x - 4}" y="113" width="22" height="5" fill="#F3E3C3" stroke="#d6c7ad"/>`;
-    return `<g data-who="J" class="hit">${rb(88, 40, 24, 22, '#4F6FA8')}<rect x="97" y="40" width="6" height="22" fill="#fff" opacity=".6"/>${hd(100, 30, .5)}</g><rect x="64" y="54" width="72" height="14" rx="3" fill="#8A6F55"/>`
-      + `<g data-who="C" class="hit">${rb(60, 78, 22, 26, '#1f1f1f')}${hd(71, 70, .45)}</g>${desk(52, 38)}<circle class="k-tapL" cx="66" cy="92" r="3" fill="${SK}"/><circle class="k-tapR" cx="76" cy="92" r="3" fill="${SK}"/>`
-      + `<g data-who="R" class="hit">${rb(118, 78, 22, 26, '#1f1f1f')}${hd(129, 70, .45)}</g>${desk(110, 38)}`
-      + `<g data-who="O" class="hit">${rb(OX - 13, 94, 26, 32, '#E8A87C')}${hd(OX, 82, .55, '#6b4a3a')}</g>${table(OX)}`
-      + `<g data-who="L" class="hit">${f ? `<rect x="${LX - 15}" y="78" width="30" height="24" rx="9" fill="${hc}"/>` : ''}${rb(LX - 14, 94, 28, 32, '#2B2626')}<polygon points="${LX - 6},94 ${LX + 6},94 ${LX + 4},126 ${LX - 4},126" fill="#C9CED6"/>${hd(LX, 82, .55)}</g>${table(LX)}`;
+    return `<g data-who="J" data-ax="100" data-ay="16" class="hit">${rb(88, 40, 24, 22, '#4F6FA8')}<rect x="97" y="40" width="6" height="22" fill="#fff" opacity=".6"/>${hd(100, 30, .5)}</g><rect x="64" y="54" width="72" height="14" rx="3" fill="#8A6F55"/>`
+      + `<g data-who="C" data-ax="40" data-ay="54" class="hit">${rb(60, 78, 22, 26, '#1f1f1f')}${hd(71, 70, .45)}</g>${desk(52, 38)}<circle class="k-tapL" cx="66" cy="92" r="3" fill="${SK}"/><circle class="k-tapR" cx="76" cy="92" r="3" fill="${SK}"/>`
+      + `<g data-who="R" data-ax="160" data-ay="54" class="hit">${rb(118, 78, 22, 26, '#1f1f1f')}${hd(129, 70, .45)}</g>${desk(110, 38)}`
+      + `<g data-who="O" data-ax="${OX}" data-ay="64" class="hit">${rb(OX - 13, 94, 26, 32, '#E8A87C')}${hd(OX, 82, .55, '#6b4a3a')}</g>${table(OX)}`
+      + `<g data-who="L" data-ax="${LX}" data-ay="64" class="hit">${f ? `<rect x="${LX - 15}" y="78" width="30" height="24" rx="9" fill="${hc}"/>` : ''}${rb(LX - 14, 94, 28, 32, '#2B2626')}<polygon points="${LX - 6},94 ${LX + 6},94 ${LX + 4},126 ${LX - 4},126" fill="#C9CED6"/>${hd(LX, 82, .55)}</g>${table(LX)}`;
   }
 
   function scene(g, k) {
