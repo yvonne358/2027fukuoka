@@ -66,3 +66,25 @@ summary{cursor:pointer;font-weight:700}
 .k-flap{transform-origin:center;animation:kflap .9s ease-in-out infinite}@keyframes kflap{50%{transform:rotate(8deg) translateY(-3px)}}
 .k-wave{animation:kwave 1.2s linear infinite}@keyframes kwave{to{transform:translateX(-26px)}}
 .k-leg{transform-origin:top center;animation:kleg .6s ease-in-out infinite alternate}@keyframes kleg{from{transform:rotate(-20deg)}to{transform:rotate(20deg)}}
+
+/* 辦公室互動 */
+.cd-scene{position:relative}
+.cd-bubble{position:absolute;top:4%;left:40%;transform:translateX(-50%);background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:6px 12px;box-shadow:var(--shadow);font-weight:700;font-size:.9rem;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap;z-index:2}
+.cd-bubble.on{opacity:1}
+.hit{cursor:pointer}
+.o-a,.m-a,.m-t,.m-w,.x-ang,.x-q,.x-z{display:none}
+svg[data-s=type] .a-type,svg[data-s=stretch] .a-stretch,svg[data-s=drink] .a-drink,svg[data-s=files] .a-files,svg[data-s=phone] .a-phone{display:inline}
+svg[data-s=drink] .cup-s{display:none}
+.ey{transition:transform .2s}svg[data-f=look] .ey{transform:translateX(3px)}
+.hd{transition:transform .25s}
+svg[data-s=stretch][data-f=look] .hd{transform:rotate(-6deg)}
+svg[data-f=turn] .hd{transform:rotate(-8deg)}svg[data-f=wonder] .hd{transform:rotate(10deg)}
+svg[data-f=angry] .hd{animation:kshake .15s infinite}@keyframes kshake{50%{transform:translateX(1.5px) rotate(2deg)}}
+.bl,.br{transition:transform .2s}
+svg[data-f=turn] .bl{transform:rotate(10deg)}svg[data-f=turn] .br{transform:rotate(-10deg)}
+svg[data-f=angry] .bl{transform:rotate(24deg)}svg[data-f=angry] .br{transform:rotate(-24deg)}
+svg[data-f=tired] .bl{transform:rotate(-10deg)}svg[data-f=tired] .br{transform:rotate(10deg)}
+svg[data-f=wonder] .br{transform:translateY(-3px)}
+.bk{fill:#FFB5B5;opacity:.5}svg[data-f=angry] .bk{fill:#FF6B6B;opacity:.9}
+svg[data-f=angry] .m-n,svg[data-f=tired] .m-n,svg[data-f=wonder] .m-n{display:none}
+svg[data-f=angry] .m-a,svg[data-f=tired] .m-t,svg[data-f=wonder] .m-w,svg[data-f=angry] .x-ang,svg[data-f=wonder] .x-q,svg[data-f=tired] .x-z{display:inline}
