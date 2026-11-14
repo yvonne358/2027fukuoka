@@ -99,3 +99,7 @@ svg[data-s=stretch][data-f=look] .m-n{display:none}svg[data-s=stretch][data-f=lo
 .cd-scene svg [transform]{transform-box:view-box;transform-origin:0 0}
 .cd-scene{max-width:300px;margin:0 auto}
 .cd-bubble{transform:translate(-50%,-100%);white-space:normal;max-width:42%;text-align:center;line-height:1.3;width:max-content}
+
+/* 收行李動畫 */
+.k-move{animation:kmove 2.6s ease-in-out infinite}@keyframes kmove{0%{transform:translate(0,0);opacity:1}70%{transform:translate(48px,-14px);opacity:1}100%{transform:translate(54px,2px);opacity:0}}
+.k-turn{transform-origin:center;animation:kturn 3s ease-in-out infinite}@keyframes kturn{0%,100%{transform:scaleX(1)}25%{transform:scaleX(.2)}50%{transform:scaleX(-1)}75%{transform:scaleX(.2)}}
