@@ -106,11 +106,55 @@
   const win = (g, x, y) => `<circle cx="${x}" cy="${y}" r="13" fill="#CDEBFF"/>` + head(g, x, y + 3, .42);
   const road = y => `<line class="k-wave" x1="0" y1="${y}" x2="260" y2="${y}" stroke="#cbbfb3" stroke-width="3" stroke-dasharray="14 12"/>`;
   const rects = (xs, y, w, h) => xs.map(x => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="3" fill="#CDEBFF"/>`).join('');
+  // ---------- 辦公室場景 + 互動 ----------
+  function office(g) {
+    const f = g === 'f', hc = '#2B2626', dc = f ? '#C9B8E8' : '#fff';
+    const arm = (a, b, c, d) => `<line x1="${a}" y1="${b}" x2="${c}" y2="${d}" stroke="${f ? SK : '#E8E1DA'}" stroke-width="8" stroke-linecap="round"/>`;
+    const hand = (x, y, c) => `<circle ${c ? `class="${c}"` : ''} cx="${x}" cy="${y}" r="4.5" fill="${SK}"/>`;
+    const stack = (x, w, cols) => cols.map((c, i) => `<rect x="${x + (i % 2)}" y="${97 - i * 7}" width="${w - (i % 2) * 2}" height="7" rx="1" fill="${c}" stroke="#d6c7ad" stroke-width=".6"/>`).join('');
+    const mon = (x, w, d) => `<rect x="${x + 16}" y="92" width="6" height="12" fill="#5B5560"/><rect x="${x}" y="60" width="${w}" height="32" rx="3" fill="#4A4A55"/><rect x="${x + 3}" y="63" width="${w - 6}" height="26" fill="#DDEEFF"/>` + [0, 1, 2, 3].map(i => `<rect class="k-twinkle" style="animation-delay:${i * .35 + d}s" x="${x + 6}" y="${67 + i * 5.5}" width="${w - 12 - (i % 2) * 8}" height="2.4" rx="1" fill="#7FA6D9"/>`).join('');
+    const bld = [[12, 34, 12], [26, 22, 14], [42, 30, 10], [54, 16, 16], [72, 28, 14]].map(([x, y, w], i) => `<rect x="${x}" y="${y}" width="${w}" height="${60 - y}" fill="${i % 2 ? '#8AA3BA' : '#9DB4C8'}"/><rect class="k-twinkle" style="animation-delay:${i * .5}s" x="${x + 3}" y="${y + 5}" width="3" height="3" fill="#FFF3B0"/>`).join('');
+    const face = `<g transform="translate(70 56)"><g class="hd">${f ? `<path d="M-30 -6C-36 -40 36 -40 30 -6L33 32Q0 40 -33 32Z" fill="${hc}"/>` : ''}<circle r="26" fill="${SK}"/><path d="M-27 -2C-30 -34 -10 -36 0 -36C12 -36 30 -34 27 -2C22 -14 12 -20 0 -20C-12 -20 -22 -14 -27 -2Z" fill="${hc}"/><g class="ey"><g class="k-blink"><ellipse cx="-10" cy="2" rx="3" ry="4.2" fill="${hc}"/><ellipse cx="10" cy="2" rx="3" ry="4.2" fill="${hc}"/></g></g>${[-10, 10].map(x => `<circle cx="${x}" cy="2" r="9" fill="rgba(255,255,255,.3)" stroke="#4A423D" stroke-width="1.6"/>`).join('')}<line x1="-1" y1="2" x2="1" y2="2" stroke="#4A423D" stroke-width="1.6"/><line class="bl" x1="-16" y1="-12" x2="-5" y2="-12" stroke="${hc}" stroke-width="2.2" stroke-linecap="round"/><line class="br" x1="5" y1="-12" x2="16" y2="-12" stroke="${hc}" stroke-width="2.2" stroke-linecap="round"/><circle class="bk" cx="-17" cy="12" r="4"/><circle class="bk" cx="17" cy="12" r="4"/><path class="m-n" d="M-5 14Q0 18 5 14" stroke="#B5655A" stroke-width="2" fill="none" stroke-linecap="round"/><ellipse class="m-a" cx="0" cy="15" rx="6" ry="5" fill="#C0392B"/><line class="m-t" x1="-4" y1="15" x2="4" y2="15" stroke="#B5655A" stroke-width="2" stroke-linecap="round"/><circle class="m-w" cx="0" cy="15" r="3" fill="#B5655A"/></g><text class="x-ang" x="16" y="-26" font-size="16">💢</text><text class="x-q" x="18" y="-28" font-size="16">❓</text><text class="x-z" x="18" y="-28" font-size="14">💤</text></g>`;
+    return '<rect width="200" height="150" fill="#F6EFE6"/><rect x="8" y="8" width="86" height="52" fill="#CFE8F5"/>' + bld + '<rect x="8" y="8" width="86" height="52" fill="none" stroke="#bfb3a5" stroke-width="3"/><rect x="5" y="58" width="92" height="4" fill="#bfb3a5"/>'
+      + `<g class="hit"><rect x="52" y="80" width="36" height="40" rx="12" fill="${dc}" stroke="#d9d2ca"/>${f ? '<path d="M62 80Q70 90 78 80Z" fill="#fff"/>' : '<polygon points="70,82 66,90 70,104 74,90" fill="#4F86C6"/>'}${face}</g>`
+      + '<rect x="4" y="104" width="192" height="8" rx="3" fill="#C9A98B"/><rect x="4" y="112" width="192" height="38" fill="#B8977A"/><line x1="100" y1="114" x2="100" y2="150" stroke="#a5846a"/>'
+      + stack(8, 34, ['#F3E3C3', '#fff', '#E8D0A9', '#D8E2EE', '#fff', '#F3E3C3', '#E8D0A9', '#fff']) + stack(44, 14, ['#E8D0A9', '#fff', '#D8E2EE'])
+      + '<rect x="56" y="100" width="30" height="4" rx="1.5" fill="#E8E1DA"/><rect class="cup-s" x="89" y="94" width="7" height="10" rx="1.5" fill="#CDEBFF" stroke="#9fc5de"/><rect x="98" y="98" width="12" height="6" rx="2" fill="#4A4A55"/><rect x="99" y="95" width="10" height="3" rx="1.5" fill="#6B6B78"/>'
+      + mon(112, 38, 0) + mon(152, 40, .5)
+      + `<g class="o-a a-type">${arm(58, 90, 66, 100)}${arm(82, 90, 78, 100)}${hand(66, 101, 'k-tapL')}${hand(78, 101, 'k-tapR')}</g>`
+      + `<g class="o-a a-stretch">${arm(56, 90, 44, 58)}${arm(84, 90, 96, 58)}${hand(44, 56)}${hand(96, 56)}</g>`
+      + `<g class="o-a a-drink">${arm(84, 92, 79, 82)}<rect x="66" y="70" width="8" height="10" rx="2" fill="#CDEBFF" stroke="#9fc5de"/>${hand(78, 80)}</g>`
+      + `<g class="o-a a-files">${arm(58, 92, 52, 97)}<rect class="k-lid" x="44" y="88" width="14" height="10" fill="#fff" stroke="#d6c7ad"/>${hand(52, 98)}</g>`
+      + `<g class="o-a a-phone">${arm(84, 92, 90, 70)}<rect x="86" y="54" width="6" height="18" rx="3" fill="#4A4A55" transform="rotate(10 89 63)"/>${hand(90, 71)}${hand(66, 101, 'k-tapL')}</g>`;
+  }
+  const SC = { s: 'type', f: 'look', n: 0, t: 0, kind: '', left: 7 };
+  const SAY = { pack: { 7: ['要帶幾套衣服...?'], 6: ['要帶幾套衣服...?'], 5: ['還有什麼要帶的嗎?'], 4: ['行動電源一定要放隨身包包...'], 3: ['其實只要有帶護照和信用卡就夠了吧!'] }, cash: ['不要偷看我的密碼!', '我忘記領錢了!', '帶這麼多錢夠嗎?'], sleep: ['好興奮!睡不著!'] };
+  const pick = a => a[Math.random() * a.length | 0];
+  function setBubble(t) { const b = $('cd-bubble'); if (b) { b.textContent = t; b.classList.toggle('on', !!t); } }
+  function applyS() { const v = $('cd-svg'); if (v) { v.dataset.s = SC.s; v.dataset.f = SC.f; } }
+  function poke() {
+    const rest = ['stretch', 'drink'].includes(SC.s), work = ['type', 'phone', 'files'].includes(SC.s);
+    SC.n = Date.now() - SC.t < 2500 ? SC.n + 1 : 1; SC.t = Date.now();
+    const many = SC.n >= 3, L = work ? ['別吵!我在工作!'] : rest ? ['好累~我休息一下~', '想睡覺了...'] : ['什麼什麼?我也要聽!', '等我一下喔~'];
+    SC.f = many ? (work ? 'angry' : rest ? 'tired' : 'wonder') : (work || rest ? 'turn' : 'wonder');
+    applyS(); setBubble(many ? pick(L) : '');
+    clearTimeout(SC.rt); SC.rt = setTimeout(() => { SC.f = 'look'; SC.n = 0; applyS(); setBubble(''); }, 3500);
+  }
+  function bindScene(kind, left) {
+    SC.kind = kind; SC.left = left; const v = $('cd-svg'); if (!v) return; applyS();
+    v.onclick = ev => {
+      if (kind === 'work') { if (ev.target.closest('.hit')) poke(); return; }
+      const L = kind === 'pack' ? (SAY.pack[left] || SAY.pack[7]) : SAY[kind]; if (!L) return;
+      setBubble(pick(L)); clearTimeout(SC.bt); SC.bt = setTimeout(() => setBubble(''), 2800);
+    };
+  }
+  setInterval(() => { if (SC.kind === 'work' && SC.f === 'look' && $('cd-svg')) { SC.s = pick(['type', 'type', 'stretch', 'drink', 'files', 'phone']); applyS(); } }, 5000);
+
   function scene(g, k) {
     const s = shirt(g), body = x => `<rect x="${x - 18}" y="84" width="36" height="44" rx="12" fill="${s}"/>`;
     const arm = (x1, y1, x2, y2) => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${s}" stroke-width="9" stroke-linecap="round"/>`;
     let o = '';
-    if (k === 'work') o = body(66) + head(g, 66, 56, 1) + '<rect x="10" y="118" width="180" height="8" rx="4" fill="#C9A98B"/><rect x="20" y="126" width="6" height="22" fill="#B8977A"/><rect x="174" y="126" width="6" height="22" fill="#B8977A"/><rect x="108" y="58" width="72" height="50" rx="6" fill="#5B5560"/><rect x="113" y="63" width="62" height="38" fill="#CDEBFF"/>' + [0, 1, 2].map(i => `<rect class="k-twinkle" style="animation-delay:${i * .4}s" x="118" y="${69 + i * 10}" width="${34 + i * 8}" height="4" rx="2" fill="#7FA6D9"/>`).join('') + '<rect x="138" y="108" width="12" height="10" fill="#5B5560"/><rect x="92" y="112" width="40" height="6" rx="3" fill="#E8E1DA"/>' + arm(80, 96, 96, 110) + `<circle class="k-tapL" cx="98" cy="111" r="5" fill="${SK}"/><circle class="k-tapR" cx="114" cy="112" r="5" fill="${SK}"/>`;
+    if (k === 'work') o = office(g);
     else if (k === 'pack') o = body(56) + head(g, 56, 56, 1) + '<rect x="104" y="98" width="70" height="42" rx="6" fill="#E8A87C"/><rect x="132" y="92" width="14" height="6" rx="3" fill="#a9754f"/><rect class="k-drop" x="128" y="62" width="24" height="24" rx="5" fill="#A0C4E3"/><rect class="k-lid" x="104" y="86" width="70" height="14" rx="6" fill="#D98E5F"/>' + arm(72, 94, 104, 80) + `<circle cx="106" cy="79" r="5" fill="${SK}"/>`;
     else if (k === 'cash') o = body(56) + head(g, 56, 56, 1) + arm(70, 94, 94, 84) + '<g class="k-flap">' + [-14, 0, 14].map(r => `<rect x="92" y="68" width="38" height="20" rx="3" fill="#CFE8C0" stroke="#7FB77E" transform="rotate(${r} 106 80)"/>`).join('') + '<text x="104" y="84" font-size="13" fill="#5C9A5B">¥</text></g>' + `<circle cx="96" cy="86" r="5" fill="${SK}"/><polygon points="140,88 167,70 194,88" fill="#C9A98B"/><rect x="146" y="90" width="8" height="38" fill="#E8E1DA"/><rect x="162" y="90" width="8" height="38" fill="#E8E1DA"/><rect x="178" y="90" width="8" height="38" fill="#E8E1DA"/><rect x="140" y="128" width="54" height="8" fill="#C9A98B"/><g class="k-bob"><circle cx="124" cy="40" r="10" fill="#F6D365"/><text x="119" y="45" font-size="13" fill="#b58a1b">¥</text></g>`;
     else if (k === 'sleep') o = '<path d="M176 14a14 14 0 1 0 8 24a11 11 0 1 1-8-24z" fill="#F6D365"/><text class="k-twinkle" x="20" y="30" font-size="14" fill="#F6D365">✦</text><text class="k-twinkle" style="animation-delay:.6s" x="150" y="62" font-size="12" fill="#F6D365">✦</text><rect x="30" y="88" width="56" height="22" rx="11" fill="#fff" stroke="#eee"/>' + head(g, 58, 76, 1) + '<rect x="14" y="104" width="172" height="44" rx="16" fill="#BFD7F2"/><rect x="14" y="118" width="172" height="8" fill="#A6C6EB"/><circle cx="92" cy="62" r="4" fill="#fff" stroke="#ddd"/><circle cx="100" cy="50" r="6" fill="#fff" stroke="#ddd"/><ellipse cx="124" cy="32" rx="28" ry="15" fill="#fff" stroke="#ddd"/><text x="102" y="37" font-size="12" fill="#4A423D">好興奮!</text>';
@@ -121,7 +165,7 @@
     else if (k === 'boat') o = '<g class="k-bob"><rect x="70" y="72" width="60" height="28" rx="6" fill="#fff" stroke="#d9d2ca"/><rect x="98" y="52" width="4" height="20" fill="#a9754f"/><polygon points="102,52 122,58 102,64" fill="#E09F9F"/>' + win(g, 100, 86) + '<path d="M24 100H176L158 128H44Z" fill="#E8A87C"/></g><path class="k-wave" d="M-26 132q13-8 26 0t26 0t26 0t26 0t26 0t26 0t26 0t26 0t26 0t26 0" stroke="#A0C4E3" stroke-width="3" fill="none"/>';
     else if (k === 'cruise') o = '<g class="k-bob"><rect x="92" y="38" width="16" height="22" fill="#E09F9F"/><rect x="58" y="58" width="84" height="20" rx="4" fill="#fff" stroke="#d9d2ca"/><rect x="40" y="78" width="120" height="20" rx="4" fill="#F2F6F9" stroke="#d9d2ca"/>' + win(g, 100, 69) + '<circle cx="56" cy="88" r="4" fill="#CDEBFF"/><circle cx="76" cy="88" r="4" fill="#CDEBFF"/><circle cx="124" cy="88" r="4" fill="#CDEBFF"/><circle cx="144" cy="88" r="4" fill="#CDEBFF"/><path d="M14 98H186L164 128H36Z" fill="#fff" stroke="#d9d2ca"/><rect x="26" y="108" width="148" height="5" fill="#A0C4E3"/></g><path class="k-wave" d="M-26 134q13-8 26 0t26 0t26 0t26 0t26 0t26 0t26 0t26 0t26 0t26 0" stroke="#A0C4E3" stroke-width="3" fill="none"/>';
     else o = road(140) + head(g, 80, 48, 1) + '<rect x="62" y="74" width="36" height="38" rx="12" fill="' + s + '"/><rect class="k-leg" x="68" y="110" width="9" height="26" rx="4" fill="#7A6A5E"/><rect class="k-leg" style="animation-direction:alternate-reverse" x="84" y="110" width="9" height="26" rx="4" fill="#7A6A5E"/>' + arm(94, 88, 120, 108) + '<g class="k-bob"><rect x="116" y="108" width="30" height="24" rx="5" fill="#E8A87C"/><rect x="126" y="102" width="10" height="6" rx="3" fill="#a9754f"/></g>' + wh(122, 136, 4) + wh(140, 136, 4);
-    return `<svg viewBox="0 0 200 150" width="100%" style="max-width:300px;height:auto" role="img">${o}</svg>`;
+    return `<svg id="cd-svg" data-s="type" data-f="look" viewBox="0 0 200 150" width="100%" style="max-width:300px;height:auto" role="img">${o}</svg>`;
   }
 
   function renderInfo() {
@@ -139,12 +183,12 @@
     const ht = info.hotels.map((h, i) => `<div class="info-card">${h.img ? `<img class="evt-img" src="${esc(h.img)}" onerror="this.remove()">` : ''}<b>${esc(h.name)}</b><div class="muted">📅 ${esc(h.in)} → ${esc(h.out)}</div>${h.note ? `<div class="bag">${esc(h.note)}</div>` : ''}<a class="route-btn" style="margin:10px 0 0" target="_blank" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(h.map || h.name)}">🗺️ 地圖</a>${ed('hotels', i)}</div>`).join('');
     const nt = info.notes.map((n, i) => `<details class="info-card"><summary>${esc(n.title)}</summary><div class="bag">${esc(n.body)}</div>${ed('notes', i)}</details>`).join('');
     const trAdmin = `<div class="info-card admin-only" style="flex-direction:column"><b>🚦 每日交通工具（管理員）</b>${data.days.map((d, i) => `<div class="tr-row"><span>Day ${i + 1}（${esc(d.date.slice(5))}）</span><select onchange="cdT(${i},this.value)"><option value="">未設定</option>${TR.map(t => `<option value="${t[0]}" ${d.transport === t[0] ? 'selected' : ''}>${t[1]} ${t[2]}</option>`).join('')}</select></div>`).join('')}</div>`;
-    pg.innerHTML = `<div class="cd-card"><div class="gender"><span class="${g === 'm' ? 'on' : ''}" onclick="cdG('m')">♂</span><span class="${g !== 'm' ? 'on' : ''}" onclick="cdG('f')">♀</span></div><div class="cd-scene">${scene(g, kind)}</div><div class="cd-days">${big}</div><div class="cd-sub">${txt}</div></div>${trAdmin}
+    pg.innerHTML = `<div class="cd-card"><div class="gender"><span class="${g === 'm' ? 'on' : ''}" onclick="cdG('m')">♂</span><span class="${g !== 'm' ? 'on' : ''}" onclick="cdG('f')">♀</span></div><div class="cd-scene">${scene(g, kind)}<div class="cd-bubble" id="cd-bubble"></div></div><div class="cd-days">${big}</div><div class="cd-sub">${txt}</div></div>${trAdmin}
     <div class="sec-h">🌤️ 旅遊天氣</div><div id="wx" class="wx-row"></div>
     <div class="sec-h">✈️ 航班資訊${add('flights', '新增')}</div>${fl || '<div class="muted">尚未新增航班</div>'}
     <div class="sec-h">🏨 住宿資訊${add('hotels', '新增')}</div>${ht || '<div class="muted">尚未新增住宿</div>'}
     <div class="sec-h">📌 其他須知${add('notes', '新增')}</div>${nt || '<div class="muted">尚未新增須知（例如：護照遺失怎麼辦、緊急聯絡電話）</div>'}`;
-    renderWx();
+    renderWx(); bindScene(kind, st.left);
   }
   async function renderWx() {
     const box = $('wx'); if (!box) return;
