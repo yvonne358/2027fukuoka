@@ -106,7 +106,7 @@ svg[data-s=stretch][data-f=look] .m-n{display:none}svg[data-s=stretch][data-f=lo
 
 /* 領外幣 / 睡不著動畫 */
 .k-atm{animation:katm 8s infinite}@keyframes katm{0%{transform:none}3%{transform:translateX(-2px)}6%{transform:translateX(2px)}9%{transform:translateX(-2px)}12%{transform:translateX(2px)}15%{transform:translateX(-2px)}18%{transform:translateX(2px)}21%,100%{transform:none}}
-.k-bills{animation:kbills 8s infinite}@keyframes kbills{0%,24%{opacity:0;transform:none}25%{opacity:1;transform:none}45%{transform:translate(0,14px)}60%,85%{transform:translate(-34px,10px)}96%{opacity:1;transform:translate(-62px,20px)}100%{opacity:0;transform:translate(-62px,20px)}}
+.k-bills{animation:kbills 8s infinite}@keyframes kbills{0%,24%{opacity:0;transform:none}25%{opacity:1;transform:none}45%{transform:translate(0,14px)}60%,85%{transform:translate(-57px,12px)}96%{opacity:1;transform:translate(-75px,16px)}100%{opacity:0;transform:translate(-75px,16px)}}
 .k-count{transform-origin:center;animation:kcount 8s infinite}@keyframes kcount{0%,59%{transform:none}64%{transform:rotate(6deg)}69%{transform:rotate(-6deg)}74%{transform:rotate(6deg)}79%{transform:rotate(-6deg)}85%,100%{transform:none}}
 .k-hands{animation:khands 8s infinite}@keyframes khands{0%,44%{opacity:0}46%,90%{opacity:1}94%,100%{opacity:0}}
 .k-roll{animation:kroll 10s infinite}@keyframes kroll{0%,35%{transform:none}43%{transform:translateX(-18px) rotate(-9deg)}51%{transform:translateX(18px) rotate(9deg)}59%{transform:translateX(-18px) rotate(-9deg)}67%{transform:translateX(18px) rotate(9deg)}75%,100%{transform:none}}
@@ -125,3 +125,18 @@ svg[data-f=wonder] .x-q2{display:inline}
 @keyframes kwalk{0%{transform:none}25%{transform:translateX(-46px)}60%{transform:translateX(60px)}100%{transform:none}}
 @keyframes kwater{0%{transform:none}35%,65%{transform:translateX(67px)}100%{transform:none}}
 @keyframes kdrip{0%,38%{opacity:0}42%,62%{opacity:1}66%,100%{opacity:0}}
+
+/* 領外幣：閒置手臂 */
+.k-idle{animation:kidle 8s infinite}@keyframes kidle{0%,44%{opacity:1}46%,90%{opacity:0}94%,100%{opacity:1}}
+/* 交通工具 */
+.k-scroll{animation:kscroll 8s linear infinite}@keyframes kscroll{to{transform:translateX(-200px)}}
+.k-drive{animation:kdrive 10s ease-in-out infinite alternate}@keyframes kdrive{from{transform:translateX(-36px)}to{transform:translateX(36px)}}
+.k-take{animation:ktake 9s ease-in infinite}
+@keyframes ktake{0%{transform:translate(-90px,0)}35%{transform:translate(10px,0)}48%{transform:translate(50px,0) rotate(-10deg)}62%{transform:translate(95px,-22px) rotate(-14deg)}85%{transform:translate(190px,-70px) rotate(-14deg)}100%{transform:translate(250px,-80px) rotate(-14deg)}}
+.k-land{animation:kland 9s ease-out infinite}
+@keyframes kland{0%{transform:translate(-230px,-80px) rotate(10deg)}25%{transform:translate(-120px,-50px) rotate(9deg)}45%{transform:translate(-20px,-6px) rotate(3deg)}52%{transform:translate(10px,0)}75%,100%{transform:translate(32px,0)}}
+.p-gout{animation:kgout 9s infinite}@keyframes kgout{0%,50%{opacity:1}70%,100%{opacity:0}}
+.p-skyin{animation:kskyin 9s infinite}@keyframes kskyin{0%,45%{opacity:0}70%,100%{opacity:1}}
+.p-gin{animation:kgin 9s infinite}@keyframes kgin{0%,40%{opacity:0}55%,100%{opacity:1}}
+.p-skyout{animation:kskyout 9s infinite}@keyframes kskyout{0%,35%{opacity:1}55%,100%{opacity:0}}
+.p-term{animation:kterm 9s ease-in infinite}@keyframes kterm{0%{transform:none}70%,100%{transform:translateX(-130px)}}
