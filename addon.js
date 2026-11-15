@@ -359,9 +359,14 @@
   window.__pushVote = (pid, o) => ready.then(() => ref.child('votes/' + me + '/' + pid).set(clean(o))).catch(() => toast('❌ 評分未同步', 1));
 
   const _sd = saveData;
+  let lastExp = {};   // 上次與雲端同步時，每筆帳目的內容（只寫入有變動的帳目，避免互相覆蓋）
   saveData = function () {
     localStorage.setItem('trip_data_public', JSON.stringify(data));
-    ready.then(() => ref.update(clean(data))).then(() => toast('✅ 已同步')).catch(() => toast('❌ 同步失敗', 1));
+    const d = clean(data), upd = {}, cur = {};
+    (d.expenses || []).forEach(e => { cur[e.id] = JSON.stringify(e); if (lastExp[e.id] !== cur[e.id]) upd['exp/' + e.id] = e; });
+    Object.keys(lastExp).forEach(id => { if (!(id in cur)) upd['exp/' + id] = null; });
+    delete d.expenses; Object.keys(d).forEach(k => { upd[k] = d[k]; }); upd.expenses = null; lastExp = cur;
+    ready.then(() => ref.update(upd)).then(() => toast('✅ 已同步')).catch(() => toast('❌ 同步失敗', 1));
   };
   const _lc = loadCloudData;
   loadCloudData = async function () {
@@ -375,9 +380,13 @@
           ref.set(clean(norm(v))); return;
         }
         votes = v.votes || {}; delete v.votes;
+        const ex = v.exp ? Object.values(v.exp) : [], old = v.expenses ? Object.values(v.expenses).filter(Boolean) : [], migrate = !ex.length && old.length;   // 舊格式（整包陣列）自動搬成單筆儲存
+        delete v.exp; v.expenses = ex.length ? ex : old;
         data = norm(v); localStorage.setItem('trip_data_public', JSON.stringify(data));
+        lastExp = {}; if (!migrate) data.expenses.forEach(e => { lastExp[e.id] = JSON.stringify(e); });
         if (currentDayIndex >= data.days.length) currentDayIndex = 0;
         updateHero(); renderDates(); renderItinerary(); renderExpenseList(); renderTotalOverview(); renderShoppingList(); renderPackingList(); renderInfo(); renderRate();
+        if (migrate) saveData();
       });
     } catch (e) { console.error(e); _lc(); }
   };
@@ -428,6 +437,7 @@
     document.querySelectorAll('#expense-list .expense-card').forEach(c => {
       const id = c.dataset.id, e = data.expenses.find(x => x.id === id); if (!e || e.type === 'transfer') return;
       badge(c, e);
+      if (e.cat) c.children[0].insertAdjacentHTML('beforeend', `<span class="cat-tag" style="background:${catColor(e.cat)}">${esc(e.cat)}</span>`);
       if (e.nPhotos) c.children[0].insertAdjacentHTML('beforeend', `<span class="muted"> 📷${e.nPhotos}</span>`);
       c.children[1].insertAdjacentHTML('beforeend', `<div class="ref-row" onclick="event.stopPropagation()"><span>退稅</span><input type="number" inputmode="numeric" placeholder="0" value="${refundOf(e) || ''}" onchange="setRefund('${esc(id)}',this.value)"><select onchange="setRefundTo('${esc(id)}',this.value)"><option value="">付款人</option>${data.members.map(m => `<option value="${esc(m)}" ${e.refundTo === m ? 'selected' : ''}>${esc(m)}</option>`).join('')}</select></div>`);
       c.style.cursor = 'pointer';
@@ -506,10 +516,11 @@
       $('exp-amount').insertAdjacentHTML('afterend', '<div id="it-box"><div class="it-head"><b>🧾 品項明細（選填）</b><button class="btn btn-outline" onclick="itAdd()">+ 品項</button></div><div id="it-list"></div></div>');
       $('exp-note').previousElementSibling.insertAdjacentHTML('beforebegin', '<label>退稅額（選填，扣除後按比例分攤）</label><input type="number" inputmode="numeric" id="exp-refund" placeholder="0"><label>退稅退給誰</label><select id="exp-refundto"></select><label>📷 發票照片（選填，自動壓縮）</label><input type="file" id="exp-photo" accept="image/*" multiple><div id="exp-ph-list"></div>');
       $('exp-note').insertAdjacentHTML('beforebegin', mdBar('exp-note'));
+      $('exp-title').insertAdjacentHTML('afterend', '<label>類別</label><select id="exp-cat" onchange="catChange(this)"></select>');
       $('exp-photo').onchange = async ev => { for (const f of ev.target.files) { try { MP.add[uid()] = await compress(f); renderMP(); } catch (x) { toast('❌ 照片讀取失敗', 1); } } ev.target.value = ''; };
     }
     const e = id ? data.expenses.find(x => x.id === id) : null;
-    $('exp-refund').value = (e && e.refund) || '';
+    fillCat(e && e.cat); $('exp-refund').value = (e && e.refund) || '';
     $('exp-refundto').innerHTML = '<option value="">付款人（預設）</option>' + data.members.map(m => `<option value="${esc(m)}">${esc(m)}</option>`).join(''); $('exp-refundto').value = (e && e.refundTo) || '';
     IT = e && e.items ? JSON.parse(JSON.stringify(e.items)) : []; IT.forEach(x => x.who = x.who || {}); renderIT();
     MP = { add: {}, del: new Set(), old: {} }; renderMP(); numpad();
@@ -522,6 +533,7 @@
     if ($('modal-expense').style.display !== 'none') return;
     const e = eid ? data.expenses.find(x => x.id === eid) : (data.expenses.length > had ? data.expenses[data.expenses.length - 1] : null); if (!e) return;
     const r = parseFloat($('exp-refund').value); if (r > 0) e.refund = r; else delete e.refund;
+    const cv = $('exp-cat').value; if (cv && cv !== '__new') e.cat = cv; else delete e.cat;
     if ($('exp-refundto').value) e.refundTo = $('exp-refundto').value; else delete e.refundTo;
     const its = IT.filter(x => x.n || x.p).map(x => ({ n: x.n || '', p: +x.p || 0, q: +x.q || 1, who: x.who || {} })); if (its.length) e.items = its; else delete e.items;
     const add = Object.entries(MP.add), del = [...MP.del], n = Object.keys(MP.old).filter(k => !MP.del.has(k)).length + add.length;
@@ -532,6 +544,51 @@
   };
   const _de = deleteExpense;
   deleteExpense = function (id) { const n = data.expenses.length; _de(id); if (data.expenses.length < n) ready.then(() => photoRef(id).remove()).catch(() => { }); };
+
+  // ---------- 類別、支出統計、匯出 ----------
+  const DEFCAT = ['餐飲', '交通', '購物', '住宿', '門票', '其他'], PAL = ['#E09F9F', '#94C0C0', '#E3D081', '#DDBEA9', '#A0C4E3', '#B8A6D9', '#9CC9A5', '#F0B27A', '#C7B299', '#8FB8DE'];
+  const cats = () => (data.settings && data.settings.categories && data.settings.categories.length) ? data.settings.categories : DEFCAT;
+  const catColor = c => c === '未分類' ? '#CFCFCF' : PAL[Math.max(0, cats().indexOf(c)) % PAL.length];
+  let statWho = '';
+  function fillCat(v) { const s = $('exp-cat'); s.innerHTML = '<option value="">未分類</option>' + cats().map(c => `<option>${esc(c)}</option>`).join('') + '<option value="__new">＋ 新增類別…</option>'; s.value = v || ''; s.dataset.prev = s.value; }
+  window.catChange = sel => { if (sel.value !== '__new') { sel.dataset.prev = sel.value; return; } const n = (prompt('新類別名稱：') || '').trim(); if (n) { const L = cats().slice(); if (!L.includes(n)) L.push(n); data.settings.categories = L; fillCat(n); } else sel.value = sel.dataset.prev || ''; };
+  function statSums(who) { const sums = {}; netExpenses(data.expenses.filter(e => e.type !== 'transfer')).forEach(e => { const r = exchangeRates[e.currency] || 1, c = e.cat || '未分類', a = who ? ((e.splitDetails || {})[who] || 0) : e.amount; sums[c] = (sums[c] || 0) + a * r; }); return sums; }
+  function donut(sums) {
+    const ent = Object.entries(sums).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]), total = ent.reduce((s, x) => s + x[1], 0); if (!ent.length) return '<div class="muted">還沒有資料</div>';
+    const C = 2 * Math.PI * 36; let off = 0;
+    const arcs = ent.map(([c, v]) => { const len = v / total * C, a = `<circle cx="50" cy="50" r="36" fill="none" stroke="${catColor(c)}" stroke-width="16" stroke-dasharray="${len} ${C - len}" stroke-dashoffset="${-off}" transform="rotate(-90 50 50)"/>`; off += len; return a; }).join('');
+    return `<div class="st-wrap"><svg viewBox="0 0 100 100" class="st-svg">${arcs}<text x="50" y="48" text-anchor="middle" font-size="6" fill="#888">總計</text><text x="50" y="58" text-anchor="middle" font-size="7.5" font-weight="700" fill="#4A423D">NT$${Math.round(total).toLocaleString()}</text></svg><div class="st-leg">${ent.map(([c, v]) => `<div class="st-row"><i style="background:${catColor(c)}"></i><span>${esc(c)}</span><b>NT$ ${Math.round(v).toLocaleString()}</b><small>${Math.round(v / total * 100)}%</small></div>`).join('')}</div></div>`;
+  }
+  function renderStats() {
+    const box = $('stats-body'); if (!box) return;
+    if (!data.members.includes(statWho)) statWho = data.members[0];
+    box.innerHTML = '<div class="ed-sub">全體支出（已扣退稅，約合台幣）</div>' + donut(statSums(''))
+      + `<div class="admin-only" style="flex-direction:column;align-items:stretch"><div class="ed-sub" style="margin-top:16px">個人支出（管理員可見）</div><select onchange="statPick(this.value)">${data.members.map(m => `<option value="${esc(m)}" ${m === statWho ? 'selected' : ''}>${esc(m)}</option>`).join('')}</select>${donut(statSums(statWho))}</div>`;
+  }
+  window.statPick = v => { statWho = v; renderStats(); };
+  $('refund-bar').insertAdjacentHTML('beforebegin', '<div class="info-card" id="stats-card"><div class="sec-h" style="margin-top:0">📊 支出統計<button class="btn btn-outline admin-only" onclick="$e(\'modal-export\').style.display=\'flex\'">📤 匯出</button></div><div id="stats-body"></div></div>');
+  window.$e = id => document.getElementById(id);
+  document.body.insertAdjacentHTML('beforeend', '<div id="modal-export" class="modal"><div class="modal-content"><h3 style="margin-top:0">匯出</h3><button class="btn" onclick="exportCSV()">📊 記帳明細（CSV，可用 Excel 開啟）</button><button class="btn" onclick="exportPlan()" style="margin-top:8px">🗓️ 行程（開新頁，可列印／存成 PDF）</button><button class="btn" onclick="exportJSON()" style="margin-top:8px">💾 完整備份（JSON）</button><button class="btn btn-outline" style="margin-top:8px" onclick="closeModal(\'modal-export\')">關閉</button></div></div>');
+  const _rt2 = renderTotalOverview; renderTotalOverview = function () { _rt2(); renderStats(); };
+  const dl = (name, text, type) => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 800); };
+  window.exportCSV = () => {
+    const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"', rows = [['日期', '類別', '項目', '幣別', '金額', '退稅', '退稅給', '先付', '每人分擔', '品項', '備註']];
+    data.expenses.slice().sort((a, b) => (a.date || '').localeCompare(b.date || '')).forEach(e => {
+      if (e.type === 'transfer') { rows.push([e.date, '轉帳', '轉帳(還款)', e.currency, e.amount, '', '', e.payer, Object.entries(e.splitDetails || {}).map(([m, v]) => m + ' ' + v).join(' / '), '', '']); return; }
+      const pay = typeof e.payer === 'object' ? e.payer : { [e.payer]: e.amount };
+      rows.push([e.date, e.cat || '', e.title, e.currency, e.amount, refundOf(e) || '', e.refundTo || '', Object.entries(pay).filter(([, v]) => v > 0).map(([m, v]) => m + ' ' + v).join(' / '), Object.entries(e.splitDetails || {}).map(([m, v]) => m + ' ' + Math.round(v)).join(' / '), (e.items || []).map(it => `${it.n} ${it.p}×${it.q}`).join(' / '), e.note || '']);
+    });
+    dl(trip + '-記帳.csv', '\ufeff' + rows.map(r => r.map(q).join(',')).join('\r\n'), 'text/csv;charset=utf-8');
+  };
+  window.exportJSON = () => dl(trip + '-備份.json', JSON.stringify(data, null, 1), 'application/json');
+  window.exportPlan = () => {
+    const w = window.open('', '_blank'); if (!w) return alert('請允許開啟新視窗');
+    const tm = e => e.time || e.depTime || '';
+    const line = e => { let m = esc(e.title); if (e.category === 'flight') m += `　${esc(e.depAirport)}→${esc(e.arrAirport)} ${esc(e.flightNo)}（${esc(e.depTime)}–${esc(e.arrTime)}）`; else if (e.category === 'transport') m += `　${esc(e.transFrom)}→${esc(e.transTo)}`; else if (e.location) m += `　📍${esc(e.location)}`; return `<div class="ev"><b>${esc(tm(e)) || '--:--'}</b><div>${m}${e.note ? `<div class="nt">${md(e.note)}</div>` : ''}</div></div>`; };
+    const body = data.days.map((d, i) => `<h2>Day ${i + 1}　${esc(d.date)}　${esc(d.title)}<small>　${esc(d.location)}</small></h2>` + (d.events || []).slice().sort((a, b) => (tm(a) || '99:99').localeCompare(tm(b) || '99:99')).map(line).join('')).join('');
+    w.document.write(`<!DOCTYPE html><html lang="zh-TW"><head><meta charset="utf-8"><title>${esc(trip)} 行程</title><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{font-family:-apple-system,'Noto Sans TC',sans-serif;max-width:720px;margin:20px auto;padding:0 16px;color:#4A423D}h2{border-bottom:2px solid #E09F9F;padding-bottom:4px;margin-top:28px;font-size:1.15rem}h2 small{color:#999;font-weight:400}.ev{display:flex;gap:12px;padding:6px 0;border-bottom:1px dashed #ddd}.ev b{width:48px;flex-shrink:0}.nt{color:#777;font-size:.9rem;white-space:pre-wrap;margin-top:2px}.tip{background:#FFF3B0;padding:8px 12px;border-radius:8px;font-size:.85rem}@media print{.tip{display:none}}</style></head><body><div class="tip">列印或「分享 → 存成 PDF」即可保存；也可以直接截圖。</div>${body}</body></html>`);
+    w.document.close();
+  };
 
   // ---------- 旅程切換（僅管理員）----------
   const b = document.createElement('div'); b.id = 'trip-btn'; b.className = 'admin-only'; b.innerText = '🗺️ ' + (trip === 'default' ? '旅程' : trip);
