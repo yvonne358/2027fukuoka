@@ -18,7 +18,7 @@
   ['click', 'touchstart', 'keydown'].forEach(e => document.addEventListener(e, () => { lastAct = Date.now(); }, true));
   setInterval(() => { if (AUTO_LOCK_MIN && typeof isAdminMode !== 'undefined' && isAdminMode && Date.now() - lastAct > AUTO_LOCK_MIN * 60000) toggleAdminMode(); }, 20000);
   const me = localStorage.voter_id || (localStorage.voter_id = 'v' + Math.random().toString(36).slice(2, 10));
-  let votes = {}, rateSel = 0, openD = {};
+  let votes = {}, rateSel = 0, openD = {}, DONE = {}, MASC = null;
   const I = () => data.info = Object.assign({ flights: [], hotels: [], notes: [] }, data.info || {});
   const R = () => data.rating = Object.assign({ items: [] }, data.rating || {});
   const commit = () => { saveData(); renderInfo(); renderRate(); };
@@ -79,11 +79,11 @@
   };
   const _se = saveEvent;
   saveEvent = function () {
-    const d = data.days[currentDayIndex], img = ($('evt-img') || {}).value || '';
+    const d = data.days[currentDayIndex], img = ($('evt-img') || {}).value || '', oi = editingEvent && editingEvent.evtIdx, oldKey = oi != null && d.events[oi] ? evKey(d, d.events[oi]) : null;
     d.events.forEach(x => Object.defineProperty(x, '_s', { value: 1, configurable: true }));
     _se();
     const n = d.events.find(x => !x._s);
-    if (n && (img || n.image)) { if (img) n.image = img; else delete n.image; saveData(); renderItinerary(); }
+    if (n) { n.id = oldKey || n.id || uid(); if (img) n.image = img; else delete n.image; saveData(); renderItinerary(); }
   };
 
   // ---------- 新增兩個頁面 + 導覽列 ----------
@@ -379,10 +379,11 @@
           else v = blank();
           ref.set(clean(norm(v))); return;
         }
-        votes = v.votes || {}; delete v.votes;
+        votes = v.votes || {}; delete v.votes; DONE = v.done || {}; delete v.done; MASC = v.mascot || null; delete v.mascot;
         const ex = v.exp ? Object.values(v.exp) : [], old = v.expenses ? Object.values(v.expenses).filter(Boolean) : [], migrate = !ex.length && old.length;   // 舊格式（整包陣列）自動搬成單筆儲存
         delete v.exp; v.expenses = ex.length ? ex : old;
         data = norm(v); localStorage.setItem('trip_data_public', JSON.stringify(data));
+        if (MASC && Date.now() - MASC.t < 432e5 && MASC.t > seenT()) { const mi = data.days.findIndex(x => x.date === MASC.d); if (mi >= 0) currentDayIndex = mi; }
         lastExp = {}; if (!migrate) data.expenses.forEach(e => { lastExp[e.id] = JSON.stringify(e); });
         if (currentDayIndex >= data.days.length) currentDayIndex = 0;
         updateHero(); renderDates(); renderItinerary(); renderExpenseList(); renderTotalOverview(); renderShoppingList(); renderPackingList(); renderInfo(); renderRate();
@@ -562,11 +563,12 @@
   function renderStats() {
     const box = $('stats-body'); if (!box) return;
     if (!data.members.includes(statWho)) statWho = data.members[0];
+    const pub = !!(data.settings && data.settings.showTotalsToPublic);
     box.innerHTML = '<div class="ed-sub">全體支出（已扣退稅，約合台幣）</div>' + donut(statSums(''))
-      + `<div class="admin-only" style="flex-direction:column;align-items:stretch"><div class="ed-sub" style="margin-top:16px">個人支出（管理員可見）</div><select onchange="statPick(this.value)">${data.members.map(m => `<option value="${esc(m)}" ${m === statWho ? 'selected' : ''}>${esc(m)}</option>`).join('')}</select>${donut(statSums(statWho))}</div>`;
+      + `<div class="${pub ? '' : 'admin-only'}" style="flex-direction:column;align-items:stretch"><div class="ed-sub" style="margin-top:16px">個人支出${pub ? '' : '（管理員可見）'}</div><select onchange="statPick(this.value)">${data.members.map(m => `<option value="${esc(m)}" ${m === statWho ? 'selected' : ''}>${esc(m)}</option>`).join('')}</select>${donut(statSums(statWho))}</div>`;
   }
   window.statPick = v => { statWho = v; renderStats(); };
-  $('refund-bar').insertAdjacentHTML('beforebegin', '<div class="info-card" id="stats-card"><div class="sec-h" style="margin-top:0">📊 支出統計<button class="btn btn-outline admin-only" onclick="$e(\'modal-export\').style.display=\'flex\'">📤 匯出</button></div><div id="stats-body"></div></div>');
+  $('refund-bar').insertAdjacentHTML('beforebegin', '<div class="info-card" id="stats-card"><div class="sec-h" style="margin-top:0">📊 支出統計<span class="admin-only" style="gap:6px"><button class="btn btn-outline" onclick="catManage()">⚙ 類別</button><button class="btn btn-outline" onclick="$e(\'modal-export\').style.display=\'flex\'">📤 匯出</button></span></div><div id="stats-body"></div></div>');
   window.$e = id => document.getElementById(id);
   document.body.insertAdjacentHTML('beforeend', '<div id="modal-export" class="modal"><div class="modal-content"><h3 style="margin-top:0">匯出</h3><button class="btn" onclick="exportCSV()">📊 記帳明細（CSV，可用 Excel 開啟）</button><button class="btn" onclick="exportPlan()" style="margin-top:8px">🗓️ 行程（開新頁，可列印／存成 PDF）</button><button class="btn" onclick="exportJSON()" style="margin-top:8px">💾 完整備份（JSON）</button><button class="btn btn-outline" style="margin-top:8px" onclick="closeModal(\'modal-export\')">關閉</button></div></div>');
   const _rt2 = renderTotalOverview; renderTotalOverview = function () { _rt2(); renderStats(); };
@@ -589,6 +591,57 @@
     w.document.write(`<!DOCTYPE html><html lang="zh-TW"><head><meta charset="utf-8"><title>${esc(trip)} 行程</title><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{font-family:-apple-system,'Noto Sans TC',sans-serif;max-width:720px;margin:20px auto;padding:0 16px;color:#4A423D}h2{border-bottom:2px solid #E09F9F;padding-bottom:4px;margin-top:28px;font-size:1.15rem}h2 small{color:#999;font-weight:400}.ev{display:flex;gap:12px;padding:6px 0;border-bottom:1px dashed #ddd}.ev b{width:48px;flex-shrink:0}.nt{color:#777;font-size:.9rem;white-space:pre-wrap;margin-top:2px}.tip{background:#FFF3B0;padding:8px 12px;border-radius:8px;font-size:.85rem}@media print{.tip{display:none}}</style></head><body><div class="tip">列印或「分享 → 存成 PDF」即可保存；也可以直接截圖。</div>${body}</body></html>`);
     w.document.close();
   };
+
+  // ---------- 現在／下一個 + 長尾山雀 ----------
+  const hash = t => { let h = 0; for (const c of t) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h.toString(36); };
+  function evKey(d, e) { return e.id || hash(d.date + '|' + (e.time || e.depTime || '') + '|' + (e.title || '')); }
+  const todayStr = () => { const n = new Date(); return n.getFullYear() + '-' + String(n.getMonth() + 1).padStart(2, '0') + '-' + String(n.getDate()).padStart(2, '0'); };
+  const seenT = () => +localStorage.getItem('tit_' + trip) || 0;
+  const TIT = '<svg viewBox="0 0 44 44"><g class="tit-tail"><path d="M28 30Q38 34 41 43" stroke="#2B2626" stroke-width="3.6" stroke-linecap="round" fill="none"/><path d="M28 30Q38 34 41 43" stroke="#fff" stroke-width="1" stroke-linecap="round" fill="none" opacity=".7"/></g><path d="M16 36v5M23 36v5" stroke="#C99A9A" stroke-width="1.6" stroke-linecap="round"/><ellipse cx="20" cy="25" rx="14" ry="12.5" fill="#fff" stroke="#E4D9CF"/><path d="M8 22Q13 9 26 12Q33 15 32 24Q22 17 8 22Z" fill="#3B3436"/><path d="M9 25Q20 20 31 27Q22 24 9 25Z" fill="#E5B5B0"/><ellipse class="tit-wing" cx="24" cy="29" rx="6.5" ry="4.2" fill="#EFE6DD" stroke="#E4D9CF"/><circle cx="13.5" cy="21" r="2" fill="#2B2626"/><circle cx="14.2" cy="20.3" r=".7" fill="#fff"/><path d="M8 24.5L4.5 25.5L8 26.7Z" fill="#2B2626"/><circle class="tit-ck" cx="11.5" cy="28" r="2.6" fill="#F4B6B6"/><path class="tit-br" d="M9.5 16.5L16.5 19" stroke="#2B2626" stroke-width="1.8" stroke-linecap="round"/></svg>';
+  const TITSAY = ['啾啾！', '今天也要慢慢玩～', '我的尾巴很長喔', '不用趕時間啦', '要記得喝水喔', '好期待下一站！', '肚子餓了嗎？', '長尾山雀最可愛了（自己說）'];
+  let titTm = 0;
+  function titSay(t, ms) { const b = document.querySelector('#tit .tit-b'); if (!b) return; b.textContent = t; b.classList.add('on'); clearTimeout(titTm); titTm = setTimeout(() => b.classList.remove('on'), ms || 2600); }
+  window.titPoke = () => { const el = $('tit'); if (!el || el.classList.contains('walk')) return; if (Math.random() < .35) { el.classList.add('roll'); titSay('咕嚕咕嚕～', 1400); setTimeout(() => el.classList.remove('roll'), 1100); } else titSay(TITSAY[Math.random() * TITSAY.length | 0]); };
+  function renderTit() {
+    const old = $('tit'); if (old) old.remove();
+    document.querySelectorAll('#itinerary-list .tick').forEach(x => x.remove());
+    const d = data.days[currentDayIndex], list = $('itinerary-list');
+    if (!d || !list || d.date > todayStr()) return;   // 還沒到的日子：不出現長尾山雀、也不能打勾
+    const ws = [...list.querySelectorAll('.timeline-card-wrapper')]; if (!ws.length) return;
+    ws.forEach(w => { const e = d.events[+w.dataset.idx], k = evKey(d, e), on = !!DONE[k]; w.dataset.k = k; w.classList.toggle('ev-done', on); w.querySelector('.card').insertAdjacentHTML('beforeend', `<div class="tick ${on ? 'on' : ''}" onclick="tickEv('${k}')">✓</div>`); });
+    if (!$('page-itinerary').classList.contains('active')) return;
+    const idx = ws.findIndex(w => !DONE[w.dataset.k]), at = idx < 0 ? ws.length - 1 : idx, P = i => { const w = ws[Math.max(0, Math.min(ws.length - 1, i))]; return `top:${w.offsetTop + 44}px;left:${w.offsetLeft + 8}px`; };
+    list.insertAdjacentHTML('beforeend', `<div id="tit" class="tit${idx < 0 ? ' fin' : ''}" onclick="titPoke()">${TIT}<div class="tit-b"></div></div>`);
+    const el = $('tit'), m = MASC, pend = m && m.d === d.date && m.t > seenT() && Date.now() - m.t < 432e5;
+    if (!pend) { el.style.cssText = P(at); return; }
+    el.style.cssText = P(m.from); el.classList.add('walk', m.dir === 'f' ? 'cheer' : 'angry');
+    titSay(m.dir === 'f' ? ['太棒了！', '完成～下一站出發！', '耶～'][Math.random() * 3 | 0] : '不要亂玩行程!!!', 2400);
+    el.getBoundingClientRect(); requestAnimationFrame(() => requestAnimationFrame(() => { el.style.cssText = P(m.to); }));
+    setTimeout(() => el.classList.remove('walk', 'cheer', 'angry'), 1800);
+    localStorage.setItem('tit_' + trip, m.t);
+  }
+  window.tickEv = key => {
+    const d = data.days[currentDayIndex], first = () => { const i = d.events.findIndex(e => !DONE[evKey(d, e)]); return i < 0 ? d.events.length : i; };
+    const from = first(), on = !DONE[key];
+    if (on) DONE[key] = Date.now(); else delete DONE[key];
+    const to = first(), m = from !== to ? { d: d.date, dir: to > from ? 'f' : 'b', from, to, t: Date.now() } : null;
+    ready.then(() => { ref.child('done/' + key).set(on ? Date.now() : null); if (m) ref.child('mascot').set(m); }).catch(() => toast('❌ 同步失敗', 1));
+    if (m) MASC = m; renderItinerary();
+  };
+  const _ri3 = renderItinerary; renderItinerary = function () { _ri3(); renderTit(); };
+  const _sp = switchPage; switchPage = function (pid, el) { _sp(pid, el); if (pid === 'itinerary') renderTit(); };
+  const _tpv = togglePublicView; togglePublicView = function () { _tpv(); renderStats(); };
+
+  // ---------- 類別管理 ----------
+  const catSave = () => { saveData(); renderExpenseList(); renderTotalOverview(); catManage(); };
+  window.catManage = () => {
+    let m = $('modal-cat'); if (!m) { document.body.insertAdjacentHTML('beforeend', '<div id="modal-cat" class="modal"><div class="modal-content"></div></div>'); m = $('modal-cat'); }
+    m.querySelector('.modal-content').innerHTML = `<h3 style="margin-top:0">管理類別</h3>${cats().map((c, i) => `<div class="cat-row"><i style="background:${catColor(c)}"></i><span>${esc(c)}</span><span class="ed" onclick="catRen(${i})">✏️ 改名</span><span class="ed" onclick="catDel(${i})">🗑️ 刪除</span></div>`).join('')}<button class="btn btn-outline" onclick="catAdd()">+ 新增類別</button><button class="btn" style="margin-top:6px" onclick="closeModal('modal-cat')">完成</button>`;
+    m.style.display = 'flex';
+  };
+  window.catAdd = () => { const n = (prompt('新類別名稱：') || '').trim(); if (!n) return; const L = cats().slice(); if (L.includes(n)) return alert('已經有這個類別了'); L.push(n); data.settings.categories = L; catSave(); };
+  window.catRen = i => { const L = cats().slice(), o = L[i], n = (prompt('改名為：', o) || '').trim(); if (!n || n === o) return; if (L.includes(n)) return alert('已經有這個類別了'); L[i] = n; data.settings.categories = L; data.expenses.forEach(e => { if (e.cat === o) e.cat = n; }); catSave(); };
+  window.catDel = i => { const L = cats().slice(), o = L[i]; if (!confirm(`刪除類別「${o}」？\n使用這個類別的帳目會變成「未分類」。`)) return; L.splice(i, 1); data.settings.categories = L; data.expenses.forEach(e => { if (e.cat === o) delete e.cat; }); catSave(); };
 
   // ---------- 旅程切換（僅管理員）----------
   const b = document.createElement('div'); b.id = 'trip-btn'; b.className = 'admin-only'; b.innerText = '🗺️ ' + (trip === 'default' ? '旅程' : trip);
