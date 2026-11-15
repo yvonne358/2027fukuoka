@@ -55,7 +55,9 @@
   // ---------- 行程照片 + 今日路線 ----------
   const _ri = renderItinerary;
   renderItinerary = function () {
+    data.days.forEach(d => { delete d.hasManualOrder; });   // 一律依時間排序（舊的手動排序紀錄也一併作廢）
     _ri();
+    if (typeof sortableInstance !== 'undefined' && sortableInstance) { sortableInstance.destroy(); sortableInstance = null; }   // 不允許拖曳調整
     const d = data.days[currentDayIndex]; if (!d) return;
     document.querySelectorAll('#itinerary-list .timeline-card-wrapper').forEach(w => {
       const ev = d.events[+w.dataset.idx];
