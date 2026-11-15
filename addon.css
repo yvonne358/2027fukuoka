@@ -198,3 +198,7 @@ body.admin-mode #page-expense.refund-on .refund-bar{display:flex}
 .info-card summary::before{content:'▸';margin-right:4px}.info-card details[open] summary::before,details[open].info-card summary::before{content:'▾'}
 .mv{margin-left:auto;gap:4px}.mv span{padding:2px 10px;background:#f1ece6;border-radius:8px;font-size:.8rem;cursor:pointer}
 .ed{gap:16px}
+
+/* 其他須知：文字一律靠左 */
+details.info-card,details.info-card .bag,details.info-card summary>span:first-child{text-align:left!important}
+details.info-card .bag{display:block;justify-content:flex-start}
