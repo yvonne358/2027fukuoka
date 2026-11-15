@@ -144,3 +144,20 @@ svg[data-f=wonder] .x-q2{display:inline}
 /* 法庭小動作 */
 .k-nod{animation:knod 4s infinite}@keyframes knod{0%,70%{transform:none}80%{transform:translateY(2px) rotate(4deg)}90%,100%{transform:none}}
 .k-sleepy{transform-origin:center bottom;animation:ksleepy 6s ease-in-out infinite}@keyframes ksleepy{0%,100%{transform:none}50%{transform:rotate(9deg) translateY(1px)}}
+
+/* 記帳：詳細、退稅、發票照片 */
+.expense-card{flex-wrap:wrap}
+.exp-detail{flex:0 0 100%;margin-top:12px;padding-top:10px;border-top:1px dashed #d8cfc4;font-size:.9rem}
+.ed-row{display:flex;justify-content:space-between;gap:10px;padding:3px 0}
+.ed-sub{margin:8px 0 2px;font-weight:700;color:var(--theme-brown)}
+.ed-img{width:72px;height:72px;object-fit:cover;border-radius:8px;margin:4px 6px 0 0;border:1.5px solid var(--line)}
+.refund-tag{display:inline-block;background:#FFF3B0;border-radius:10px;padding:1px 8px;font-size:.75rem;margin-top:2px}
+.ref-row{display:none;align-items:center;gap:6px;margin-top:6px;justify-content:flex-end;font-size:.8rem}
+body.admin-mode #page-expense.refund-on .ref-row{display:flex}
+.ref-row input{width:90px;margin:0;padding:4px 6px;text-align:right}
+.refund-btn{position:absolute;top:calc(15px + env(safe-area-inset-top));right:58px;height:32px;padding:0 12px;border-radius:16px;background:rgba(255,255,255,.85);border:1.5px solid var(--line);align-items:center;font-size:.85rem;font-weight:700;cursor:pointer;z-index:100}
+.refund-btn.on{background:var(--theme-pink);color:#fff}
+#img-view{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:3000;align-items:center;justify-content:center}
+#img-view img{max-width:96%;max-height:92%}
+.mp-img{position:relative;display:inline-block;margin:4px 6px 0 0}.mp-img img{width:64px;height:64px;object-fit:cover;border-radius:8px}
+.mp-img span{position:absolute;top:-6px;right:-6px;background:#d33;color:#fff;border-radius:50%;width:18px;height:18px;text-align:center;line-height:18px;font-size:.7rem;cursor:pointer}
