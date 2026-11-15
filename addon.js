@@ -5,6 +5,12 @@
 
   const $ = id => document.getElementById(id);
   const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  // 簡易文字格式：**粗體**、*斜體*、~~刪除線~~、<span style="color: #ff0000;">文字</span>（只允許顏色，其他一律當一般文字）
+  const mdEm = t => t.replace(/\*\*([\s\S]+?)\*\*/g, '<b>$1</b>').replace(/~~([\s\S]+?)~~/g, '<s>$1</s>').replace(/\*([^*\n]+?)\*/g, '<i>$1</i>');
+  const md = t => mdEm(esc(t).replace(/&lt;span style=(?:&quot;|')color:\s*(#[0-9a-fA-F]{3,8}|[a-zA-Z]+)\s*;?(?:&quot;|')&gt;([\s\S]*?)&lt;\/span&gt;/g, '<span style="color:$1">$2</span>'));
+  const MDC = ['#e53935', '#fb8c00', '#43a047', '#1e88e5', '#8e24aa'];
+  const mdBar = id => `<div class="md-bar"><button type="button" onclick="mdW('${id}','**','**')"><b>B</b></button><button type="button" onclick="mdW('${id}','*','*')"><i>I</i></button><button type="button" onclick="mdW('${id}','~~','~~')"><s>S</s></button>${MDC.map(c => `<button type="button" class="md-c" style="background:${c}" onclick="mdW('${id}','&lt;span style=&quot;color: ${c};&quot;&gt;','&lt;/span&gt;')"></button>`).join('')}</div>`;
+  window.mdW = (id, a, b) => { const t = $(id); if (!t) return; const st = t.selectionStart, en = t.selectionEnd, v = t.value, sel = v.slice(st, en) || '文字'; t.value = v.slice(0, st) + a + sel + b + v.slice(en); t.focus(); t.setSelectionRange(st + a.length, st + a.length + sel.length); };
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
   const trip = new URLSearchParams(location.search).get('trip') || 'default';
   // 管理員模式閒置自動上鎖（分鐘；設 0 代表不自動上鎖）
@@ -21,7 +27,7 @@
   // ---------- 通用表單視窗 ----------
   function form(title, fields, vals, onSave, onDel) {
     let m = $('gen-modal'); if (!m) { m = document.createElement('div'); m.id = 'gen-modal'; m.className = 'modal'; document.body.appendChild(m); }
-    m.innerHTML = `<div class="modal-content"><h3 style="margin-top:0">${title}</h3>${fields.map(([k, l, t]) => `<label>${l}</label>` + (t === 'area' ? `<textarea id="gf-${k}" rows="3"></textarea>` : `<input id="gf-${k}" type="${t || 'text'}">`)).join('')}<button class="btn" id="gf-ok">儲存</button>${onDel ? '<button class="btn btn-danger" id="gf-del">刪除</button>' : ''}<button class="btn btn-outline" id="gf-x" style="margin-top:5px">取消</button></div>`;
+    m.innerHTML = `<div class="modal-content"><h3 style="margin-top:0">${title}</h3>${fields.map(([k, l, t]) => `<label>${l}</label>` + (t === 'rich' ? mdBar('gf-' + k) + `<textarea id="gf-${k}" rows="4"></textarea>` : t === 'area' ? `<textarea id="gf-${k}" rows="3"></textarea>` : `<input id="gf-${k}" type="${t || 'text'}">`)).join('')}<button class="btn" id="gf-ok">儲存</button>${onDel ? '<button class="btn btn-danger" id="gf-del">刪除</button>' : ''}<button class="btn btn-outline" id="gf-x" style="margin-top:5px">取消</button></div>`;
     fields.forEach(([k]) => $('gf-' + k).value = (vals || {})[k] || '');
     const close = () => m.style.display = 'none';
     $('gf-ok').onclick = () => { const o = {}; fields.forEach(([k]) => o[k] = $('gf-' + k).value.trim()); onSave(o); close(); };
@@ -55,6 +61,7 @@
       const ev = d.events[+w.dataset.idx];
       if (ev && ev.image) { const im = document.createElement('img'); im.className = 'evt-img'; im.loading = 'lazy'; im.src = ev.image; im.onerror = () => im.remove(); w.querySelector('.event-title-large').after(im); }
     });
+    document.querySelectorAll('#itinerary-list .event-note-box').forEach(el => { el.innerHTML = mdEm(el.innerHTML); });
     const stops = d.events.filter(x => x.location && x.category !== 'flight' && x.category !== 'transport').map(x => '日本 ' + x.location);
     if (stops.length >= 2) {
       const u = 'https://www.google.com/maps/dir/?api=1&origin=' + encodeURIComponent(stops[0]) + '&destination=' + encodeURIComponent(stops[stops.length - 1]) + (stops.length > 2 ? '&waypoints=' + encodeURIComponent(stops.slice(1, -1).join('|')) : '');
@@ -65,6 +72,7 @@
   openEventModal = function (idx) {
     _oe(idx);
     if (!$('evt-img')) $('evt-note').previousElementSibling.insertAdjacentHTML('beforebegin', '<label>照片網址（選填）</label><input type="text" id="evt-img" placeholder="例如 images/dazaifu.jpg">');
+    if (!$('evt-note').previousElementSibling.classList.contains('md-bar')) $('evt-note').insertAdjacentHTML('beforebegin', mdBar('evt-note'));
     $('evt-img').value = idx == null ? '' : (data.days[currentDayIndex].events[idx].image || '');
   };
   const _se = saveEvent;
@@ -92,14 +100,15 @@
   // ---------- 須知頁 ----------
   const TR = [['plane-arr', '🛬', '飛機(抵達)'], ['plane-dep', '🛫', '飛機(出發)'], ['train', '🚃', '火車'], ['shinkansen', '🚄', '新幹線'], ['bus', '🚌', '公車'], ['coach', '🚍', '遊覽車'], ['car', '🚗', '小客車'], ['boat', '⛴️', '船'], ['cruise', '🛳️', '郵輪'], ['walk', '🚶', '走路']];
   const SCH = {
-    flights: ['航班', [['date', '日期', 'date'], ['dep', '出發機場縮寫（如 TPE）'], ['depT', '起飛時間', 'time'], ['arr', '抵達機場縮寫（如 FUK）'], ['arrT', '降落時間', 'time'], ['no', '班機號'], ['bag', '託運行李（尺寸/件數/限重/總重或單件…）', 'area'], ['carry', '手提行李（尺寸/限重…）', 'area']]],
-    hotels: ['住宿', [['name', '住宿名稱'], ['in', '入住日期', 'date'], ['out', '退房日期', 'date'], ['img', '照片網址（選填）'], ['map', '地圖搜尋關鍵字或地址（選填）'], ['note', '備註', 'area']]],
-    notes: ['須知', [['title', '標題'], ['body', '內文', 'area']]]
+    flights: ['航班', [['date', '日期', 'date'], ['dep', '出發機場縮寫（如 TPE）'], ['depT', '起飛時間', 'time'], ['arr', '抵達機場縮寫（如 FUK）'], ['arrT', '降落時間', 'time'], ['no', '班機號'], ['bag', '託運行李（尺寸/件數/限重/總重或單件…）', 'rich'], ['carry', '手提行李（尺寸/限重…）', 'rich']]],
+    hotels: ['住宿', [['name', '住宿名稱'], ['in', '入住日期', 'date'], ['out', '退房日期', 'date'], ['img', '照片網址（選填）'], ['map', '地圖搜尋關鍵字或地址（選填）'], ['note', '備註', 'rich']]],
+    notes: ['須知', [['title', '標題'], ['body', '內文', 'rich']]]
   };
   window.infoEdit = (k, i) => { const L = I()[k], n = i == null; form((n ? '新增' : '編輯') + SCH[k][0], SCH[k][1], n ? {} : L[i], o => { n ? L.push(o) : L[i] = o; commit(); }, n ? null : () => { L.splice(i, 1); commit(); }); };
+  window.infoMove = (k, i, d) => { const L = I()[k], j = i + d; if (j < 0 || j >= L.length) return; [L[i], L[j]] = [L[j], L[i]]; commit(); };
   window.cdG = g => { localStorage.cd_gender = g; renderInfo(); };
   window.cdT = (i, v) => { data.days[i].transport = v; commit(); };
-  const ed = (k, i) => `<div class="ed admin-only" onclick="infoEdit('${k}',${i})">✏️ 編輯</div>`;
+  const ed = (k, i) => `<div class="ed admin-only"><span onclick="infoEdit('${k}',${i})">✏️ 編輯</span>${k !== 'notes' ? `<span onclick="infoMove('${k}',${i},-1)">▲ 上移</span><span onclick="infoMove('${k}',${i},1)">▼ 下移</span>` : ''}</div>`;
   const add = (k, t) => `<button class="btn btn-outline admin-only" onclick="infoEdit('${k}')">+ ${t}</button>`;
   let wxKey = '', wxHtml = '';
   const wi = c => c === 0 ? '☀️' : c <= 3 ? '⛅' : c < 50 ? '🌫️' : c < 70 ? '🌧️' : c < 80 ? '❄️' : c < 90 ? '🌦️' : '⛈️';
@@ -268,9 +277,9 @@
     if (st.k === 'work' && !st.end && courtDay()) { kind = 'court'; txt = '開庭中…'; }
     const big = st.k === 'trip' ? `旅行中 第 <b>${st.di + 1}</b> 天` : st.end ? '旅程結束' : `還有 <b>${st.left}</b> 天`;
     const info = I();
-    const fl = info.flights.map((f, i) => `<div class="info-card"><div class="fl-row"><div><b>${esc(f.dep)}</b><small>${esc(f.depT)}</small></div><div class="fl-mid">✈️<small>${esc(f.no)}</small></div><div><b>${esc(f.arr)}</b><small>${esc(f.arrT)}</small></div></div><small class="muted">${esc(f.date)}</small>${f.bag ? `<div class="bag">🧳 託運：${esc(f.bag)}</div>` : ''}${f.carry ? `<div class="bag">🎒 手提：${esc(f.carry)}</div>` : ''}${ed('flights', i)}</div>`).join('');
-    const ht = info.hotels.map((h, i) => `<div class="info-card">${h.img ? `<img class="evt-img" src="${esc(h.img)}" onerror="this.remove()">` : ''}<b>${esc(h.name)}</b><div class="muted">📅 ${esc(h.in)} → ${esc(h.out)}</div>${h.note ? `<div class="bag">${esc(h.note)}</div>` : ''}<a class="route-btn" style="margin:10px 0 0" target="_blank" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(h.map || h.name)}">🗺️ 地圖</a>${ed('hotels', i)}</div>`).join('');
-    const nt = info.notes.map((n, i) => `<details class="info-card"><summary>${esc(n.title)}</summary><div class="bag">${esc(n.body)}</div>${ed('notes', i)}</details>`).join('');
+    const fl = info.flights.map((f, i) => `<div class="info-card"><div class="fl-row"><div><b>${esc(f.dep)}</b><small>${esc(f.depT)}</small></div><div class="fl-mid">✈️<small>${esc(f.no)}</small></div><div><b>${esc(f.arr)}</b><small>${esc(f.arrT)}</small></div></div><small class="muted">${esc(f.date)}</small>${f.bag ? `<div class="bag">🧳 託運：${md(f.bag)}</div>` : ''}${f.carry ? `<div class="bag">🎒 手提：${md(f.carry)}</div>` : ''}${ed('flights', i)}</div>`).join('');
+    const ht = info.hotels.map((h, i) => `<div class="info-card">${h.img ? `<img class="evt-img" src="${esc(h.img)}" onerror="this.remove()">` : ''}<b>${esc(h.name)}</b><div class="muted">📅 ${esc(h.in)} → ${esc(h.out)}</div>${h.note ? `<div class="bag">${md(h.note)}</div>` : ''}<a class="route-btn" style="margin:10px 0 0" target="_blank" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(h.map || h.name)}">🗺️ 地圖</a>${ed('hotels', i)}</div>`).join('');
+    const nt = info.notes.map((n, i) => `<details class="info-card"><summary><span>${md(n.title)}</span><span class="mv admin-only"><span onclick="event.preventDefault();event.stopPropagation();infoMove('notes',${i},-1)">▲</span><span onclick="event.preventDefault();event.stopPropagation();infoMove('notes',${i},1)">▼</span></span></summary><div class="bag">${md(n.body)}</div>${ed('notes', i)}</details>`).join('');
     const trAdmin = `<div class="info-card admin-only" style="flex-direction:column"><b>🚦 每日交通工具（管理員）</b>${data.days.map((d, i) => `<div class="tr-row"><span>Day ${i + 1}（${esc(d.date.slice(5))}）</span><select onchange="cdT(${i},this.value)"><option value="">未設定</option>${TR.map(t => `<option value="${t[0]}" ${d.transport === t[0] ? 'selected' : ''}>${t[1]} ${t[2]}</option>`).join('')}</select></div>`).join('')}</div>`;
     pg.innerHTML = `<div class="cd-card"><div class="gender"><span class="${g === 'm' ? 'on' : ''}" onclick="cdG('m')">♂</span><span class="${g !== 'm' ? 'on' : ''}" onclick="cdG('f')">♀</span></div><div class="cd-scene">${scene(g, kind, st.left)}<div class="cd-bubble" id="cd-bubble"></div></div><div class="cd-days">${big}</div><div class="cd-sub">${txt}</div></div>${trAdmin}
     <div class="sec-h">🌤️ 旅遊天氣</div><div id="wx" class="wx-row"></div>
@@ -390,13 +399,13 @@
 
   function detailHtml(e) {
     const c = e.currency, pay = typeof e.payer === 'object' ? e.payer : { [e.payer]: e.amount }, r = refundOf(e), k = r && r < e.amount ? (e.amount - r) / e.amount : 1;
-    const payers = Object.keys(pay).filter(m => pay[m] > 0), row = (a, b) => `<div class="ed-row"><span>${a}</span><span>${b}</span></div>`;
+    const payers = Object.keys(pay).filter(m => pay[m] > 0), row = (a, b) => `<div class="ed-row"><span>${a}</span><span>${b}</span></div>`, sec = (t, b) => `<div class="ed-sec"><div class="ed-sub">${t}</div><div class="ed-body">${b}</div></div>`;
     const items = (e.items || []).map(it => { const q = +it.q || 1, ws = Object.entries(it.who || {}).filter(([, n]) => n > 0), who = !ws.length ? '全員平分' : q === 1 ? ws.map(w => esc(w[0])).join('、') : ws.map(([m, n]) => esc(m) + '×' + n).join('　'); return `<div class="ed-item">${row(esc(it.n || '品項'), fmtM(c, (+it.p || 0) * q))}<small class="muted">${fmtM('', +it.p || 0)} × ${q}　→ ${who}</small></div>`; }).join('');
-    return '<div class="exp-detail">' + (items ? `<div class="ed-sub">品項</div>${items}` : '')
-      + '<div class="ed-sub">誰先付</div>' + payers.map(m => row(esc(m), fmtM(c, pay[m]))).join('')
-      + `<div class="ed-sub">每人應付${r ? '（已扣退稅）' : ''}</div>` + Object.entries(e.splitDetails || {}).map(([m, v]) => row(esc(m), fmtM(c, v * k) + (r ? `<small class="muted">（原 ${fmtM('', v)}）</small>` : ''))).join('')
-      + (r ? `<div class="ed-sub">退稅</div>` + row('金額', '− ' + fmtM(c, r)) + row('退給', esc(e.refundTo || payers.join('、') || '—')) : '')
-      + (e.note ? `<div class="bag">${esc(e.note)}</div>` : '') + (e.nPhotos ? '<div class="ed-ph"><span class="muted">📷 發票載入中…</span></div>' : '') + '</div>';
+    return '<div class="exp-detail">' + (items ? sec('品項', items) : '')
+      + sec('誰先付', payers.map(m => row(esc(m), fmtM(c, pay[m]))).join(''))
+      + sec('每人應付' + (r ? '（已扣退稅）' : ''), Object.entries(e.splitDetails || {}).map(([m, v]) => row(esc(m), fmtM(c, v * k) + (r ? `<small class="muted">（原 ${fmtM('', v)}）</small>` : ''))).join(''))
+      + (r ? sec('退稅', row('金額', '− ' + fmtM(c, r)) + row('退給', esc(e.refundTo || payers.join('、') || '—'))) : '')
+      + (e.note ? sec('備註', `<div class="bag" style="margin:0">${md(e.note)}</div>`) : '') + (e.nPhotos ? sec('發票照片', '<div class="ed-ph"><span class="muted">📷 載入中…</span></div>') : '') + '</div>';
   }
   function openDetail(card, e) {
     card.insertAdjacentHTML('beforeend', detailHtml(e));
@@ -418,7 +427,7 @@
       const id = c.dataset.id, e = data.expenses.find(x => x.id === id); if (!e || e.type === 'transfer') return;
       badge(c, e);
       if (e.nPhotos) c.children[0].insertAdjacentHTML('beforeend', `<span class="muted"> 📷${e.nPhotos}</span>`);
-      c.children[1].insertAdjacentHTML('beforeend', `<div class="ref-row" onclick="event.stopPropagation()"><span>退稅</span><input type="number" inputmode="decimal" placeholder="0" value="${refundOf(e) || ''}" onchange="setRefund('${esc(id)}',this.value)"><select onchange="setRefundTo('${esc(id)}',this.value)"><option value="">付款人</option>${data.members.map(m => `<option value="${esc(m)}" ${e.refundTo === m ? 'selected' : ''}>${esc(m)}</option>`).join('')}</select></div>`);
+      c.children[1].insertAdjacentHTML('beforeend', `<div class="ref-row" onclick="event.stopPropagation()"><span>退稅</span><input type="number" inputmode="numeric" placeholder="0" value="${refundOf(e) || ''}" onchange="setRefund('${esc(id)}',this.value)"><select onchange="setRefundTo('${esc(id)}',this.value)"><option value="">付款人</option>${data.members.map(m => `<option value="${esc(m)}" ${e.refundTo === m ? 'selected' : ''}>${esc(m)}</option>`).join('')}</select></div>`);
       c.style.cursor = 'pointer';
       c.onclick = ev => { if (ev.target.closest('.admin-only, .ref-row, .exp-detail')) return; const d = c.querySelector('.exp-detail'); if (d) { d.remove(); delete openExp[id]; } else { openExp[id] = 1; openDetail(c, e); } };
       if (openExp[id]) openDetail(c, e);
@@ -440,18 +449,16 @@
 
   // ---------- 品項明細（單價 × 數量，各人買幾個）----------
   const itT = it => (+it.p || 0) * (+it.q || 1);
+  const itWarn = i => { const it = IT[i], q = +it.q || 1, w = it.who || {}; if (q > 1) { const used = Object.values(w).reduce((s, x) => s + x, 0); return used !== q ? `已分 ${used}/${q}，其餘平分` : ''; } return Object.keys(w).length ? '' : '未選＝全員平分'; };
   function itWho(i) {
     const it = IT[i], q = +it.q || 1, w = it.who || {};
-    let h = data.members.map((m, mi) => { const n = w[m] || 0;
+    return data.members.map((m, mi) => { const n = w[m] || 0;
       if (!n) return `<span class="chip" onclick="itTog(${i},${mi})">${esc(m)}</span>`;
-      return q > 1 ? `<span class="chip on">${esc(m)} <i onclick="itQ(${i},${mi},-1)">－</i><b>${n}</b><i onclick="itQ(${i},${mi},1)">＋</i></span>` : `<span class="chip on" onclick="itTog(${i},${mi})">${esc(m)}</span>`; }).join('');
-    if (q > 1) { const used = Object.values(w).reduce((s, x) => s + x, 0); if (used !== q) h += `<small class="it-warn">已分 ${used}/${q}，其餘平分</small>`; }
-    else if (!Object.keys(w).length) h += '<small class="muted">未選＝全員平分</small>';
-    return h;
+      return q > 1 ? `<span class="chip on">${esc(m)} <i onclick="itQ(${i},${mi},-1)">－</i><input class="chip-n" type="number" inputmode="numeric" value="${n}" onfocus="this.select()" onchange="itN(${i},${mi},this.value)"><i onclick="itQ(${i},${mi},1)">＋</i></span>` : `<span class="chip on" onclick="itTog(${i},${mi})">${esc(m)}</span>`; }).join('') + `<small class="it-warn" id="it-warn${i}">${itWarn(i)}</small>`;
   }
   function renderIT() {
-    const box = $('it-list'); if (!box) return;
-    box.innerHTML = IT.map((it, i) => `<div class="it-row"><div class="it-top"><input placeholder="品名" value="${esc(it.n)}" oninput="itSet(${i},'n',this.value)"><input type="number" inputmode="decimal" placeholder="單價" value="${it.p || ''}" oninput="itSet(${i},'p',this.value)"><span>×</span><input type="number" inputmode="numeric" value="${it.q || 1}" oninput="itSet(${i},'q',this.value)"><span class="it-x" onclick="itDel(${i})">✕</span></div><div class="it-sub">小計 <b id="it-t${i}">${fmtM('', itT(it))}</b></div><div class="it-who" id="it-w${i}">${itWho(i)}</div></div>`).join('');
+    const box = $('it-list'); if (!box) return; setTimeout(numpad, 0);
+    box.innerHTML = IT.map((it, i) => `<div class="it-row"><div class="it-top"><input placeholder="品名" value="${esc(it.n)}" oninput="itSet(${i},'n',this.value)"><input type="number" inputmode="numeric" onfocus="this.select()" placeholder="單價" value="${it.p || ''}" oninput="itSet(${i},'p',this.value)"><span>×</span><input type="number" inputmode="numeric" onfocus="this.select()" value="${it.q || 1}" oninput="itSet(${i},'q',this.value)"><span class="it-x" onclick="itDel(${i})">✕</span></div><div class="it-sub">小計 <b id="it-t${i}">${fmtM('', itT(it))}</b></div><div class="it-who" id="it-w${i}">${itWho(i)}</div></div>`).join('');
   }
   function itUp(i) { $('it-t' + i).textContent = fmtM('', itT(IT[i])); $('it-w' + i).innerHTML = itWho(i); itApply(); }
   function itApply() {
@@ -478,6 +485,7 @@
     itUp(i);
   };
   window.itTog = (i, mi) => { const it = IT[i], m = data.members[mi]; it.who = it.who || {}; if (it.who[m]) delete it.who[m]; else it.who[m] = 1; itUp(i); };
+  window.itN = (i, mi, v) => { const it = IT[i], m = data.members[mi], n = parseInt(v) || 0; if (n <= 0) { delete it.who[m]; itUp(i); return; } it.who[m] = n; $('it-t' + i).textContent = fmtM('', itT(it)); $('it-warn' + i).textContent = itWarn(i); itApply(); };
   window.itQ = (i, mi, d) => { const it = IT[i], m = data.members[mi], n = (it.who[m] || 0) + d; if (n <= 0) delete it.who[m]; else it.who[m] = n; itUp(i); };
 
   // ---------- 發票照片：手機端自動壓縮（長邊 1400px、JPEG 60%，約 200～300KB）----------
@@ -487,19 +495,22 @@
     L.innerHTML = Object.keys(MP.old).filter(k => !MP.del.has(k)).map(k => `<div class="mp-img"><img src="${MP.old[k]}"><span onclick="mpDel('${k}')">✕</span></div>`).join('') + Object.keys(MP.add).map(k => `<div class="mp-img"><img src="${MP.add[k]}"><span onclick="mpDel('${k}',1)">✕</span></div>`).join('');
   }
   window.mpDel = (k, isNew) => { if (isNew) delete MP.add[k]; else MP.del.add(k); renderMP(); };
+  const numpad = () => document.querySelectorAll('#modal-expense input[type=number], #modal-transfer input[type=number], #modal-expense .payer-amt, #modal-expense .split-amt').forEach(i => { i.setAttribute('inputmode', 'numeric'); i.setAttribute('pattern', '[0-9]*'); if (!i.getAttribute('onfocus')) i.setAttribute('onfocus', 'this.select()'); });
+  const _otm = openTransferModal; openTransferModal = function (id) { _otm(id); numpad(); };
   const _oem = openExpenseModal;
   openExpenseModal = function (id) {
     _oem(id);
     if (!$('exp-refund')) {
       $('exp-amount').insertAdjacentHTML('afterend', '<div id="it-box"><div class="it-head"><b>🧾 品項明細（選填）</b><button class="btn btn-outline" onclick="itAdd()">+ 品項</button></div><div id="it-list"></div></div>');
-      $('exp-note').previousElementSibling.insertAdjacentHTML('beforebegin', '<label>退稅額（選填，扣除後按比例分攤）</label><input type="number" inputmode="decimal" id="exp-refund" placeholder="0"><label>退稅退給誰</label><select id="exp-refundto"></select><label>📷 發票照片（選填，自動壓縮）</label><input type="file" id="exp-photo" accept="image/*" multiple><div id="exp-ph-list"></div>');
+      $('exp-note').previousElementSibling.insertAdjacentHTML('beforebegin', '<label>退稅額（選填，扣除後按比例分攤）</label><input type="number" inputmode="numeric" id="exp-refund" placeholder="0"><label>退稅退給誰</label><select id="exp-refundto"></select><label>📷 發票照片（選填，自動壓縮）</label><input type="file" id="exp-photo" accept="image/*" multiple><div id="exp-ph-list"></div>');
+      $('exp-note').insertAdjacentHTML('beforebegin', mdBar('exp-note'));
       $('exp-photo').onchange = async ev => { for (const f of ev.target.files) { try { MP.add[uid()] = await compress(f); renderMP(); } catch (x) { toast('❌ 照片讀取失敗', 1); } } ev.target.value = ''; };
     }
     const e = id ? data.expenses.find(x => x.id === id) : null;
     $('exp-refund').value = (e && e.refund) || '';
     $('exp-refundto').innerHTML = '<option value="">付款人（預設）</option>' + data.members.map(m => `<option value="${esc(m)}">${esc(m)}</option>`).join(''); $('exp-refundto').value = (e && e.refundTo) || '';
     IT = e && e.items ? JSON.parse(JSON.stringify(e.items)) : []; IT.forEach(x => x.who = x.who || {}); renderIT();
-    MP = { add: {}, del: new Set(), old: {} }; renderMP();
+    MP = { add: {}, del: new Set(), old: {} }; renderMP(); numpad();
     if (e && e.nPhotos) ready.then(() => photoRef(e.id).once('value')).then(s => { MP.old = s.val() || {}; renderMP(); });
   };
   const _sx = saveExpense;
