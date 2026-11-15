@@ -371,16 +371,18 @@
     } catch (e) { console.error(e); _lc(); }
   };
 
-  // ---------- 記帳：點開看詳細、退稅、發票照片 ----------
-  const openExp = {}; let MP = { add: {}, del: new Set(), old: {} };
-  const fmtM = (c, n) => c + ' ' + (Math.round(n * 100) / 100).toLocaleString();
+  // ---------- 記帳：點開看詳細、退稅、品項分配、發票照片 ----------
+  const openExp = {}; let MP = { add: {}, del: new Set(), old: {} }, IT = [];
+  const fmtM = (c, n) => (c ? c + ' ' : '') + (Math.round(n * 100) / 100).toLocaleString();
   const refundOf = e => Math.max(0, +e.refund || 0);
   const photoRef = id => db.ref('photos/' + trip + '/' + id);
-  function netExpenses(list) {   // 依比例扣掉退稅：每人分擔與付款人金額一起縮小
+  function netExpenses(list) {   // 依比例扣退稅：分擔按比例縮小；退稅退給指定的人，沒指定就由付款人按比例拿回
     return list.map(e => {
       const r = refundOf(e); if (e.type === 'transfer' || !r || r >= e.amount) return e;
-      const k = (e.amount - r) / e.amount, sc = o => Object.fromEntries(Object.entries(o).map(([m, v]) => [m, v * k]));
-      return Object.assign({}, e, { amount: e.amount - r, splitDetails: sc(e.splitDetails || {}), payer: typeof e.payer === 'object' ? sc(e.payer) : e.payer });
+      const k = (e.amount - r) / e.amount, sc = (o, f) => Object.fromEntries(Object.entries(o).map(([m, v]) => [m, v * f]));
+      let pay = typeof e.payer === 'object' ? Object.assign({}, e.payer) : { [e.payer]: e.amount };
+      if (e.refundTo) pay[e.refundTo] = (pay[e.refundTo] || 0) - r; else pay = sc(pay, k);
+      return Object.assign({}, e, { amount: e.amount - r, splitDetails: sc(e.splitDetails || {}, k), payer: pay });
     });
   }
   const withNet = fn => function () { const o = data.expenses; data.expenses = netExpenses(o); try { fn(); } finally { data.expenses = o; } };
@@ -388,48 +390,97 @@
 
   function detailHtml(e) {
     const c = e.currency, pay = typeof e.payer === 'object' ? e.payer : { [e.payer]: e.amount }, r = refundOf(e), k = r && r < e.amount ? (e.amount - r) / e.amount : 1;
-    return '<div class="exp-detail">'
-      + `<div class="ed-row"><b>誰先付</b><span>${Object.entries(pay).filter(([, v]) => v > 0).map(([m, v]) => esc(m) + ' ' + fmtM(c, v)).join('、')}</span></div>`
-      + `<div class="ed-sub">每人應付${r ? '（已扣退稅）' : ''}</div>` + Object.entries(e.splitDetails || {}).map(([m, v]) => `<div class="ed-row"><span>${esc(m)}</span><span>${fmtM(c, v * k)}${r ? `<small class="muted">（原 ${fmtM(c, v)}）</small>` : ''}</span></div>`).join('')
-      + (r ? `<div class="ed-row"><b>退稅</b><span>− ${fmtM(c, r)}</span></div>` : '') + (e.note ? `<div class="bag">${esc(e.note)}</div>` : '')
-      + (e.nPhotos ? '<div class="ed-ph"><span class="muted">📷 發票載入中…</span></div>' : '') + '</div>';
+    const payers = Object.keys(pay).filter(m => pay[m] > 0), row = (a, b) => `<div class="ed-row"><span>${a}</span><span>${b}</span></div>`;
+    const items = (e.items || []).map(it => { const q = +it.q || 1, ws = Object.entries(it.who || {}).filter(([, n]) => n > 0), who = !ws.length ? '全員平分' : q === 1 ? ws.map(w => esc(w[0])).join('、') : ws.map(([m, n]) => esc(m) + '×' + n).join('　'); return `<div class="ed-item">${row(esc(it.n || '品項'), fmtM(c, (+it.p || 0) * q))}<small class="muted">${fmtM('', +it.p || 0)} × ${q}　→ ${who}</small></div>`; }).join('');
+    return '<div class="exp-detail">' + (items ? `<div class="ed-sub">品項</div>${items}` : '')
+      + '<div class="ed-sub">誰先付</div>' + payers.map(m => row(esc(m), fmtM(c, pay[m]))).join('')
+      + `<div class="ed-sub">每人應付${r ? '（已扣退稅）' : ''}</div>` + Object.entries(e.splitDetails || {}).map(([m, v]) => row(esc(m), fmtM(c, v * k) + (r ? `<small class="muted">（原 ${fmtM('', v)}）</small>` : ''))).join('')
+      + (r ? `<div class="ed-sub">退稅</div>` + row('金額', '− ' + fmtM(c, r)) + row('退給', esc(e.refundTo || payers.join('、') || '—')) : '')
+      + (e.note ? `<div class="bag">${esc(e.note)}</div>` : '') + (e.nPhotos ? '<div class="ed-ph"><span class="muted">📷 發票載入中…</span></div>' : '') + '</div>';
   }
   function openDetail(card, e) {
     card.insertAdjacentHTML('beforeend', detailHtml(e));
     const box = card.querySelector('.ed-ph'); if (!box) return;
-    ready.then(() => photoRef(e.id).once('value')).then(s => { const v = s.val() || {}; box.innerHTML = Object.keys(v).map(k => `<img class="ed-img" src="${v[k]}" onclick="viewImg(this.src)">`).join('') || '<span class="muted">沒有照片</span>'; }).catch(() => { box.innerHTML = '<span class="muted">照片載入失敗</span>'; });
+    ready.then(() => photoRef(e.id).once('value')).then(s => { const v = s.val() || {}; box.innerHTML = Object.keys(v).map(k => `<img class="ed-img" src="${v[k]}" onclick="event.stopPropagation();viewImg(this.src)">`).join('') || '<span class="muted">沒有照片</span>'; }).catch(() => { box.innerHTML = '<span class="muted">照片載入失敗</span>'; });
   }
   function badge(card, e) {
     card.querySelectorAll('.refund-tag').forEach(x => x.remove());
-    const r = refundOf(e); if (r && card.children[1]) card.children[1].children[0].insertAdjacentHTML('afterend', `<div class="refund-tag">退稅 −${fmtM(e.currency, r)}</div>`);
+    const r = refundOf(e); if (r && card.children[1]) card.children[1].children[0].insertAdjacentHTML('afterend', `<div class="refund-tag">退稅 −${fmtM(e.currency, r)}${e.refundTo ? '（給' + esc(e.refundTo) + '）' : ''}</div>`);
+  }
+  function refreshCard(id) {
+    const e = data.expenses.find(x => x.id === id), c = document.querySelector(`#expense-list .expense-card[data-id="${id}"]`); if (!e || !c) return;
+    badge(c, e); const d = c.querySelector('.exp-detail'); if (d) { d.remove(); openDetail(c, e); }
   }
   const _rel = renderExpenseList;
   renderExpenseList = function () {
-    _rel();
+    _rel(); renderRefundBar();
     document.querySelectorAll('#expense-list .expense-card').forEach(c => {
-      const id = c.dataset.id, e = data.expenses.find(x => x.id === id); if (!e) return;
-      if (e.type !== 'transfer') {
-        badge(c, e);
-        if (e.nPhotos) c.children[0].insertAdjacentHTML('beforeend', `<span class="muted"> 📷${e.nPhotos}</span>`);
-        c.children[1].insertAdjacentHTML('beforeend', `<div class="ref-row" onclick="event.stopPropagation()"><span>退稅</span><input type="number" inputmode="decimal" placeholder="0" value="${refundOf(e) || ''}" onchange="setRefund('${esc(id)}',this.value)"></div>`);
-        c.style.cursor = 'pointer';
-        c.onclick = ev => { if (ev.target.closest('.admin-only, .ref-row')) return; const d = c.querySelector('.exp-detail'); if (d) { d.remove(); delete openExp[id]; } else { openExp[id] = 1; openDetail(c, e); } };
-        if (openExp[id]) openDetail(c, e);
-      }
+      const id = c.dataset.id, e = data.expenses.find(x => x.id === id); if (!e || e.type === 'transfer') return;
+      badge(c, e);
+      if (e.nPhotos) c.children[0].insertAdjacentHTML('beforeend', `<span class="muted"> 📷${e.nPhotos}</span>`);
+      c.children[1].insertAdjacentHTML('beforeend', `<div class="ref-row" onclick="event.stopPropagation()"><span>退稅</span><input type="number" inputmode="decimal" placeholder="0" value="${refundOf(e) || ''}" onchange="setRefund('${esc(id)}',this.value)"><select onchange="setRefundTo('${esc(id)}',this.value)"><option value="">付款人</option>${data.members.map(m => `<option value="${esc(m)}" ${e.refundTo === m ? 'selected' : ''}>${esc(m)}</option>`).join('')}</select></div>`);
+      c.style.cursor = 'pointer';
+      c.onclick = ev => { if (ev.target.closest('.admin-only, .ref-row, .exp-detail')) return; const d = c.querySelector('.exp-detail'); if (d) { d.remove(); delete openExp[id]; } else { openExp[id] = 1; openDetail(c, e); } };
+      if (openExp[id]) openDetail(c, e);
     });
   };
-  window.setRefund = (id, v) => {
-    const e = data.expenses.find(x => x.id === id); if (!e) return;
-    const n = parseFloat(v); if (n > 0) e.refund = n; else delete e.refund;
-    saveData(); renderTotalOverview();
-    const c = document.querySelector(`#expense-list .expense-card[data-id="${id}"]`);
-    if (c) { badge(c, e); const d = c.querySelector('.exp-detail'); if (d) { d.remove(); openDetail(c, e); } }
+  window.setRefund = (id, v) => { const e = data.expenses.find(x => x.id === id); if (!e) return; const n = parseFloat(v); if (n > 0) e.refund = n; else delete e.refund; saveData(); renderTotalOverview(); refreshCard(id); };
+  window.setRefundTo = (id, v) => { const e = data.expenses.find(x => x.id === id); if (!e) return; if (v) e.refundTo = v; else delete e.refundTo; saveData(); renderTotalOverview(); refreshCard(id); };
+  window.refundAll = on => {
+    const who = $('rb-who').value;
+    if (!confirm(on ? `把所有帳目的退稅人都設為「${who}」？\n（之後仍可一張張調整）` : '所有帳目的退稅人還原為各自的付款人？')) return;
+    data.expenses.forEach(e => { if (e.type !== 'transfer') { if (on) e.refundTo = who; else delete e.refundTo; } });
+    saveData(); renderExpenseList(); renderTotalOverview();
   };
+  function renderRefundBar() { const s = $('rb-who'); if (s) { const v = s.value; s.innerHTML = data.members.map(m => `<option value="${esc(m)}">${esc(m)}</option>`).join(''); if (v) s.value = v; } }
   window.toggleRefund = () => { const on = $('page-expense').classList.toggle('refund-on'); $('refund-btn').classList.toggle('on', on); $('refund-btn').textContent = on ? '✓ 完成退稅' : '🧾 退稅'; };
   $('page-expense').querySelector('.hero-header').insertAdjacentHTML('beforeend', '<div id="refund-btn" class="refund-btn admin-only" onclick="toggleRefund()">🧾 退稅</div>');
+  $('expense-list').insertAdjacentHTML('beforebegin', '<div id="refund-bar" class="refund-bar"><span>統一退稅給</span><select id="rb-who"></select><button class="btn" onclick="refundAll(1)">全部套用</button><button class="btn btn-outline" onclick="refundAll(0)">還原付款人</button></div>');
   window.viewImg = src => { let o = $('img-view'); if (!o) { o = document.createElement('div'); o.id = 'img-view'; o.onclick = () => { o.style.display = 'none'; }; document.body.appendChild(o); } o.innerHTML = `<img src="${src}">`; o.style.display = 'flex'; };
 
-  // 發票照片：手機端自動壓縮（長邊 1400px、JPEG 60%，約 200～300KB）
+  // ---------- 品項明細（單價 × 數量，各人買幾個）----------
+  const itT = it => (+it.p || 0) * (+it.q || 1);
+  function itWho(i) {
+    const it = IT[i], q = +it.q || 1, w = it.who || {};
+    let h = data.members.map((m, mi) => { const n = w[m] || 0;
+      if (!n) return `<span class="chip" onclick="itTog(${i},${mi})">${esc(m)}</span>`;
+      return q > 1 ? `<span class="chip on">${esc(m)} <i onclick="itQ(${i},${mi},-1)">－</i><b>${n}</b><i onclick="itQ(${i},${mi},1)">＋</i></span>` : `<span class="chip on" onclick="itTog(${i},${mi})">${esc(m)}</span>`; }).join('');
+    if (q > 1) { const used = Object.values(w).reduce((s, x) => s + x, 0); if (used !== q) h += `<small class="it-warn">已分 ${used}/${q}，其餘平分</small>`; }
+    else if (!Object.keys(w).length) h += '<small class="muted">未選＝全員平分</small>';
+    return h;
+  }
+  function renderIT() {
+    const box = $('it-list'); if (!box) return;
+    box.innerHTML = IT.map((it, i) => `<div class="it-row"><div class="it-top"><input placeholder="品名" value="${esc(it.n)}" oninput="itSet(${i},'n',this.value)"><input type="number" inputmode="decimal" placeholder="單價" value="${it.p || ''}" oninput="itSet(${i},'p',this.value)"><span>×</span><input type="number" inputmode="numeric" value="${it.q || 1}" oninput="itSet(${i},'q',this.value)"><span class="it-x" onclick="itDel(${i})">✕</span></div><div class="it-sub">小計 <b id="it-t${i}">${fmtM('', itT(it))}</b></div><div class="it-who" id="it-w${i}">${itWho(i)}</div></div>`).join('');
+  }
+  function itUp(i) { $('it-t' + i).textContent = fmtM('', itT(IT[i])); $('it-w' + i).innerHTML = itWho(i); itApply(); }
+  function itApply() {
+    if (!IT.length) return;
+    const M = data.members, raw = {}; let total = 0; M.forEach(m => raw[m] = 0);
+    IT.forEach(it => {
+      const p = +it.p || 0, q = +it.q || 1, T = p * q, who = Object.entries(it.who || {}).filter(([m, n]) => M.includes(m) && n > 0); total += T;
+      if (q === 1) { const S = who.length ? who.map(x => x[0]) : M; S.forEach(m => raw[m] += T / S.length); }
+      else { let used = 0; who.forEach(([m, n]) => { raw[m] += p * n; used += n; }); const rem = Math.max(0, q - used); if (rem) M.forEach(m => raw[m] += p * rem / M.length); }
+    });
+    total = Math.round(total); const out = {}; let sum = 0; M.forEach(m => { out[m] = Math.round(raw[m]); sum += out[m]; });
+    if (total - sum) { const mx = M.reduce((a, b) => raw[b] > raw[a] ? b : a); out[mx] += total - sum; }
+    $('exp-amount').value = total; handleTotalAmountChange();
+    document.querySelectorAll('.split-amt').forEach(inp => { const m = inp.dataset.m, cb = document.querySelector(`.split-cb[value="${m}"]`); if (cb) cb.checked = (out[m] || 0) > 0; inp.value = out[m] || 0; inp.dataset.locked = 'true'; inp.classList.remove('auto-calc'); });
+    setSplitMode('custom'); chkTotal();
+  }
+  window.itAdd = () => { IT.push({ n: '', p: 0, q: 1, who: {} }); renderIT(); };
+  window.itDel = i => { IT.splice(i, 1); renderIT(); itApply(); };
+  window.itSet = (i, k, v) => {
+    const it = IT[i];
+    if (k === 'n') { it.n = v; return; }
+    if (k === 'p') it.p = parseFloat(v) || 0;
+    else { const nq = Math.max(1, parseInt(v) || 1); if (nq === 1 && (it.q || 1) > 1) it.who = Object.fromEntries(Object.keys(it.who || {}).map(m => [m, 1])); it.q = nq; }
+    itUp(i);
+  };
+  window.itTog = (i, mi) => { const it = IT[i], m = data.members[mi]; it.who = it.who || {}; if (it.who[m]) delete it.who[m]; else it.who[m] = 1; itUp(i); };
+  window.itQ = (i, mi, d) => { const it = IT[i], m = data.members[mi], n = (it.who[m] || 0) + d; if (n <= 0) delete it.who[m]; else it.who[m] = n; itUp(i); };
+
+  // ---------- 發票照片：手機端自動壓縮（長邊 1400px、JPEG 60%，約 200～300KB）----------
   const compress = f => new Promise((res, rej) => { const img = new Image(), u = URL.createObjectURL(f); img.onload = () => { const s = Math.min(1, 1400 / Math.max(img.width, img.height)), c = document.createElement('canvas'); c.width = Math.round(img.width * s); c.height = Math.round(img.height * s); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(u); res(c.toDataURL('image/jpeg', .6)); }; img.onerror = rej; img.src = u; });
   function renderMP() {
     const L = $('exp-ph-list'); if (!L) return;
@@ -440,11 +491,15 @@
   openExpenseModal = function (id) {
     _oem(id);
     if (!$('exp-refund')) {
-      $('exp-note').previousElementSibling.insertAdjacentHTML('beforebegin', '<label>退稅額（選填，扣除後按比例分攤）</label><input type="number" inputmode="decimal" id="exp-refund" placeholder="0"><label>📷 發票照片（選填，自動壓縮）</label><input type="file" id="exp-photo" accept="image/*" multiple><div id="exp-ph-list"></div>');
+      $('exp-amount').insertAdjacentHTML('afterend', '<div id="it-box"><div class="it-head"><b>🧾 品項明細（選填）</b><button class="btn btn-outline" onclick="itAdd()">+ 品項</button></div><div id="it-list"></div></div>');
+      $('exp-note').previousElementSibling.insertAdjacentHTML('beforebegin', '<label>退稅額（選填，扣除後按比例分攤）</label><input type="number" inputmode="decimal" id="exp-refund" placeholder="0"><label>退稅退給誰</label><select id="exp-refundto"></select><label>📷 發票照片（選填，自動壓縮）</label><input type="file" id="exp-photo" accept="image/*" multiple><div id="exp-ph-list"></div>');
       $('exp-photo').onchange = async ev => { for (const f of ev.target.files) { try { MP.add[uid()] = await compress(f); renderMP(); } catch (x) { toast('❌ 照片讀取失敗', 1); } } ev.target.value = ''; };
     }
     const e = id ? data.expenses.find(x => x.id === id) : null;
-    $('exp-refund').value = (e && e.refund) || ''; MP = { add: {}, del: new Set(), old: {} }; renderMP();
+    $('exp-refund').value = (e && e.refund) || '';
+    $('exp-refundto').innerHTML = '<option value="">付款人（預設）</option>' + data.members.map(m => `<option value="${esc(m)}">${esc(m)}</option>`).join(''); $('exp-refundto').value = (e && e.refundTo) || '';
+    IT = e && e.items ? JSON.parse(JSON.stringify(e.items)) : []; IT.forEach(x => x.who = x.who || {}); renderIT();
+    MP = { add: {}, del: new Set(), old: {} }; renderMP();
     if (e && e.nPhotos) ready.then(() => photoRef(e.id).once('value')).then(s => { MP.old = s.val() || {}; renderMP(); });
   };
   const _sx = saveExpense;
@@ -454,10 +509,12 @@
     if ($('modal-expense').style.display !== 'none') return;
     const e = eid ? data.expenses.find(x => x.id === eid) : (data.expenses.length > had ? data.expenses[data.expenses.length - 1] : null); if (!e) return;
     const r = parseFloat($('exp-refund').value); if (r > 0) e.refund = r; else delete e.refund;
+    if ($('exp-refundto').value) e.refundTo = $('exp-refundto').value; else delete e.refundTo;
+    const its = IT.filter(x => x.n || x.p).map(x => ({ n: x.n || '', p: +x.p || 0, q: +x.q || 1, who: x.who || {} })); if (its.length) e.items = its; else delete e.items;
     const add = Object.entries(MP.add), del = [...MP.del], n = Object.keys(MP.old).filter(k => !MP.del.has(k)).length + add.length;
     if (n) e.nPhotos = n; else delete e.nPhotos;
     if (add.length || del.length) ready.then(() => { const r0 = photoRef(e.id); add.forEach(([k, u]) => r0.child(k).set(u)); del.forEach(k => r0.child(k).remove()); }).catch(() => toast('❌ 照片上傳失敗', 1));
-    MP = { add: {}, del: new Set(), old: {} };
+    MP = { add: {}, del: new Set(), old: {} }; IT = [];
     saveData(); renderExpenseList(); renderTotalOverview();
   };
   const _de = deleteExpense;
