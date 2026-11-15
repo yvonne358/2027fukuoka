@@ -208,3 +208,22 @@ details.info-card .bag{display:block;justify-content:flex-start}
 .st-wrap{display:flex;gap:12px;align-items:center;margin-top:6px}.st-svg{width:130px;flex-shrink:0}
 .st-leg{flex:1;min-width:0}.st-row{display:flex;align-items:center;gap:6px;font-size:.82rem;padding:2px 0}
 .st-row i{width:10px;height:10px;border-radius:50%;flex-shrink:0}.st-row span{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.st-row small{color:#999;width:34px;text-align:right}
+
+/* 現在／下一個 + 長尾山雀 */
+.tick{position:absolute;top:10px;right:10px;width:30px;height:30px;border-radius:50%;border:2px solid #d8cfc4;color:#d8cfc4;display:flex;align-items:center;justify-content:center;font-weight:700;cursor:pointer;background:#fff;z-index:2}
+.tick.on{background:#9CC9A5;border-color:#9CC9A5;color:#fff}
+.ev-done{opacity:.5;filter:grayscale(.55);transition:opacity .6s}
+.ev-done .card{transform:scale(.97);transform-origin:left center}
+.tit{position:absolute;width:44px;height:44px;z-index:6;cursor:pointer;transition:top 1.5s ease-in-out,left 1.5s ease-in-out}
+.tit svg{width:44px;height:44px;overflow:visible;animation:tbob 1.8s ease-in-out infinite}
+.tit-tail{transform-origin:28px 30px;animation:ttail 1.6s ease-in-out infinite}
+@keyframes tbob{50%{transform:translateY(-2px)}}@keyframes ttail{50%{transform:rotate(8deg)}}
+.tit-br{display:none}.tit.angry .tit-br{display:inline}.tit.angry .tit-ck{fill:#ff5a5a}
+.tit.walk svg{animation:thop .35s ease-in-out infinite}@keyframes thop{50%{transform:translateY(-6px)}}
+.tit.cheer .tit-wing{transform-origin:24px 29px;animation:twing .25s ease-in-out infinite}@keyframes twing{50%{transform:rotate(-40deg) translateY(-3px)}}
+.tit.angry svg{animation:tshake .15s infinite}@keyframes tshake{50%{transform:translateX(2px) rotate(3deg)}}
+.tit.roll svg{animation:troll 1s ease-in-out}@keyframes troll{to{transform:rotate(720deg)}}
+.tit.fin svg{animation:thop .7s ease-in-out infinite}
+.tit-b{position:absolute;left:46px;top:-6px;background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:4px 10px;font-size:.8rem;font-weight:700;white-space:nowrap;opacity:0;transition:opacity .2s;pointer-events:none;box-shadow:var(--shadow);color:var(--ink)}
+.tit-b.on{opacity:1}
+.cat-row{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px dashed #eee}.cat-row i{width:12px;height:12px;border-radius:50%}.cat-row span:nth-child(2){flex:1}
