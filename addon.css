@@ -202,3 +202,9 @@ body.admin-mode #page-expense.refund-on .refund-bar{display:flex}
 /* 其他須知：文字一律靠左 */
 details.info-card,details.info-card .bag,details.info-card summary>span:first-child{text-align:left!important}
 details.info-card .bag{display:block;justify-content:flex-start}
+
+/* 類別、統計 */
+.cat-tag{display:inline-block;margin-left:6px;padding:0 8px;border-radius:10px;font-size:.7rem;color:#fff}
+.st-wrap{display:flex;gap:12px;align-items:center;margin-top:6px}.st-svg{width:130px;flex-shrink:0}
+.st-leg{flex:1;min-width:0}.st-row{display:flex;align-items:center;gap:6px;font-size:.82rem;padding:2px 0}
+.st-row i{width:10px;height:10px;border-radius:50%;flex-shrink:0}.st-row span{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.st-row small{color:#999;width:34px;text-align:right}
