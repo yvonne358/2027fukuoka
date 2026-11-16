@@ -227,3 +227,15 @@ details.info-card .bag{display:block;justify-content:flex-start}
 .tit-b{position:absolute;left:46px;top:-6px;background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:4px 10px;font-size:.8rem;font-weight:700;white-space:nowrap;opacity:0;transition:opacity .2s;pointer-events:none;box-shadow:var(--shadow);color:var(--ink)}
 .tit-b.on{opacity:1}
 .cat-row{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px dashed #eee}.cat-row i{width:12px;height:12px;border-radius:50%}.cat-row span:nth-child(2){flex:1}
+
+/* 長尾山雀新造型、折疊已完成 */
+.tit-wl{transform-box:view-box;transform-origin:10px 18px}.tit-wr{transform-box:view-box;transform-origin:34px 18px}
+.tit.cheer .tit-wl{animation:twl .25s ease-in-out infinite}.tit.cheer .tit-wr{animation:twr .25s ease-in-out infinite}
+@keyframes twl{50%{transform:rotate(-42deg) translateY(-2px)}}@keyframes twr{50%{transform:rotate(42deg) translateY(-2px)}}
+.tit.angry .tit-ck{fill:#ff5a5a;opacity:.9}
+.tit{width:48px;height:48px}.tit svg{width:48px;height:48px}
+.ev-fold{display:none!important}
+.fold-bar{display:inline-block;margin:0 0 20px 80px;padding:8px 14px;background:#EEF6EF;border:1.5px dashed #9CC9A5;border-radius:14px;color:#5C9A5B;font-weight:700;font-size:.9rem;cursor:pointer;position:relative;z-index:2}
+
+.tit-wl{transform-origin:11px 17px}.tit-wr{transform-origin:33px 17px}
+@keyframes twl{50%{transform:rotate(55deg)}}@keyframes twr{50%{transform:rotate(-55deg)}}
