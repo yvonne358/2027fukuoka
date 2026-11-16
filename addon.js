@@ -597,28 +597,50 @@
   function evKey(d, e) { return e.id || hash(d.date + '|' + (e.time || e.depTime || '') + '|' + (e.title || '')); }
   const todayStr = () => { const n = new Date(); return n.getFullYear() + '-' + String(n.getMonth() + 1).padStart(2, '0') + '-' + String(n.getDate()).padStart(2, '0'); };
   const seenT = () => +localStorage.getItem('tit_' + trip) || 0;
-  const TIT = '<svg viewBox="0 0 44 44"><g class="tit-tail"><path d="M28 30Q38 34 41 43" stroke="#2B2626" stroke-width="3.6" stroke-linecap="round" fill="none"/><path d="M28 30Q38 34 41 43" stroke="#fff" stroke-width="1" stroke-linecap="round" fill="none" opacity=".7"/></g><path d="M16 36v5M23 36v5" stroke="#C99A9A" stroke-width="1.6" stroke-linecap="round"/><ellipse cx="20" cy="25" rx="14" ry="12.5" fill="#fff" stroke="#E4D9CF"/><path d="M8 22Q13 9 26 12Q33 15 32 24Q22 17 8 22Z" fill="#3B3436"/><path d="M9 25Q20 20 31 27Q22 24 9 25Z" fill="#E5B5B0"/><ellipse class="tit-wing" cx="24" cy="29" rx="6.5" ry="4.2" fill="#EFE6DD" stroke="#E4D9CF"/><circle cx="13.5" cy="21" r="2" fill="#2B2626"/><circle cx="14.2" cy="20.3" r=".7" fill="#fff"/><path d="M8 24.5L4.5 25.5L8 26.7Z" fill="#2B2626"/><circle class="tit-ck" cx="11.5" cy="28" r="2.6" fill="#F4B6B6"/><path class="tit-br" d="M9.5 16.5L16.5 19" stroke="#2B2626" stroke-width="1.8" stroke-linecap="round"/></svg>';
+  const TIT = '<svg viewBox="0 0 44 44"><g class="tit-tail"><path d="M26 36Q37 38 42 47" stroke="#4A4044" stroke-width="3.4" stroke-linecap="round" fill="none"/><path d="M26 36Q37 38 42 47" stroke="#fff" stroke-width=".9" stroke-linecap="round" fill="none" opacity=".6"/></g><path d="M16 38v4M28 38v4" stroke="#2B2626" stroke-width="1.8" stroke-linecap="round"/><g class="tit-wl"><path d="M12 15Q-1 20 3 34Q13 31 16 21Z" fill="#B9A79A"/><path d="M12 15Q-1 20 3 34" stroke="#3B3436" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="tit-wr"><path d="M32 15Q45 20 41 34Q31 31 28 21Z" fill="#B9A79A"/><path d="M32 15Q45 20 41 34" stroke="#3B3436" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><circle cx="22" cy="22.5" r="18" fill="#fff" stroke="#EAE2DA"/><ellipse cx="22" cy="33" rx="12" ry="6" fill="#F4EFEA" opacity=".5"/><circle cx="15" cy="21" r="2" fill="#2B2626"/><circle cx="15.7" cy="20.2" r=".7" fill="#fff"/><circle cx="29" cy="21" r="2" fill="#2B2626"/><circle cx="29.7" cy="20.2" r=".7" fill="#fff"/><path d="M20.2 24.6Q22 23.6 23.8 24.6Q22 27.8 20.2 24.6Z" fill="#3A3436"/><ellipse class="tit-ck" cx="10.5" cy="26" rx="2.8" ry="2" fill="#F4B6B6" opacity=".55"/><ellipse class="tit-ck" cx="33.5" cy="26" rx="2.8" ry="2" fill="#F4B6B6" opacity=".55"/><path class="tit-br" d="M10.5 15.5L18 18.2M33.5 15.5L26 18.2" stroke="#2B2626" stroke-width="1.8" stroke-linecap="round"/></svg>';
   const TITSAY = ['啾啾！', '今天也要慢慢玩～', '我的尾巴很長喔', '不用趕時間啦', '要記得喝水喔', '好期待下一站！', '肚子餓了嗎？', '長尾山雀最可愛了（自己說）'];
   let titTm = 0;
   function titSay(t, ms) { const b = document.querySelector('#tit .tit-b'); if (!b) return; b.textContent = t; b.classList.add('on'); clearTimeout(titTm); titTm = setTimeout(() => b.classList.remove('on'), ms || 2600); }
   window.titPoke = () => { const el = $('tit'); if (!el || el.classList.contains('walk')) return; if (Math.random() < .35) { el.classList.add('roll'); titSay('咕嚕咕嚕～', 1400); setTimeout(() => el.classList.remove('roll'), 1100); } else titSay(TITSAY[Math.random() * TITSAY.length | 0]); };
+  // 長尾山雀是獨立的一層，不會跟著行程列表重畫，所以可以慢慢走過去；已完成的行程會折疊起來
+  let titEl = null, titIdx = null, titDay = '', titTok = 0, titBusy = 0, titKeep = 0; const foldOpen = {};
+  window.foldTog = () => { const d = data.days[currentDayIndex]; foldOpen[d.date] = !foldOpen[d.date]; renderTit(); };
+  function titHide() { if (titEl) titEl.style.display = 'none'; titIdx = null; }
   function renderTit() {
-    const old = $('tit'); if (old) old.remove();
-    document.querySelectorAll('#itinerary-list .tick').forEach(x => x.remove());
+    document.querySelectorAll('#itinerary-list .tick, #itinerary-list .fold-bar').forEach(x => x.remove());
     const d = data.days[currentDayIndex], list = $('itinerary-list');
-    if (!d || !list || d.date > todayStr()) return;   // 還沒到的日子：不出現長尾山雀、也不能打勾
-    const ws = [...list.querySelectorAll('.timeline-card-wrapper')]; if (!ws.length) return;
+    if (!d || !list || d.date > todayStr()) return titHide();   // 還沒到的日子：不出現長尾山雀、也不能打勾
+    const ws = [...list.querySelectorAll('.timeline-card-wrapper')]; if (!ws.length) return titHide();
     ws.forEach(w => { const e = d.events[+w.dataset.idx], k = evKey(d, e), on = !!DONE[k]; w.dataset.k = k; w.classList.toggle('ev-done', on); w.querySelector('.card').insertAdjacentHTML('beforeend', `<div class="tick ${on ? 'on' : ''}" onclick="tickEv('${k}')">✓</div>`); });
-    if (!$('page-itinerary').classList.contains('active')) return;
-    const idx = ws.findIndex(w => !DONE[w.dataset.k]), at = idx < 0 ? ws.length - 1 : idx, P = i => { const w = ws[Math.max(0, Math.min(ws.length - 1, i))]; return `top:${w.offsetTop + 44}px;left:${w.offsetLeft + 8}px`; };
-    list.insertAdjacentHTML('beforeend', `<div id="tit" class="tit${idx < 0 ? ' fin' : ''}" onclick="titPoke()">${TIT}<div class="tit-b"></div></div>`);
-    const el = $('tit'), m = MASC, pend = m && m.d === d.date && m.t > seenT() && Date.now() - m.t < 432e5;
-    if (!pend) { el.style.cssText = P(at); return; }
-    el.style.cssText = P(m.from); el.classList.add('walk', m.dir === 'f' ? 'cheer' : 'angry');
-    titSay(m.dir === 'f' ? ['太棒了！', '完成～下一站出發！', '耶～'][Math.random() * 3 | 0] : '不要亂玩行程!!!', 2400);
-    el.getBoundingClientRect(); requestAnimationFrame(() => requestAnimationFrame(() => { el.style.cssText = P(m.to); }));
-    setTimeout(() => el.classList.remove('walk', 'cheer', 'angry'), 1800);
-    localStorage.setItem('tit_' + trip, m.t);
+    const idx = ws.findIndex(w => !DONE[w.dataset.k]), at = idx < 0 ? ws.length - 1 : idx, active = $('page-itinerary').classList.contains('active'), open = !!foldOpen[d.date];
+    const live = () => [...list.querySelectorAll('.timeline-card-wrapper')];
+    const foldTo = n => live().forEach((w, i) => w.classList.toggle('ev-fold', !open && i < n));
+    const place = (i, anim) => { const L = live(), w = L[Math.max(0, Math.min(L.length - 1, i))]; titEl.style.transition = anim ? '' : 'none'; titEl.style.top = (list.offsetTop + w.offsetTop + 44) + 'px'; titEl.style.left = (list.offsetLeft + w.offsetLeft + 8) + 'px'; };
+    if (at > 0) { const bar = document.createElement('div'); bar.className = 'fold-bar'; bar.innerHTML = `✓ 已完成 ${at} 個行程　${open ? '▴ 收起' : '▾ 展開'}`; bar.onclick = window.foldTog; list.insertBefore(bar, ws[at]); }
+    const m = MASC, pend = m && m.d === d.date && m.t > seenT() && Date.now() - m.t < 432e5;
+    let from = null, dir = null;
+    if (active) {
+      if (titEl && titDay === d.date && titIdx != null && titIdx !== at) { from = titIdx; dir = at > from ? 'f' : 'b'; }
+      else if (pend && (titDay !== d.date || titIdx == null)) { from = m.from; dir = m.dir; }
+      if (pend) localStorage.setItem('tit_' + trip, m.t);
+    }
+    if (from != null) from = Math.min(from, ws.length - 1); if (from === at) from = null;
+    const par = list.parentNode; if (getComputedStyle(par).position === 'static') par.style.position = 'relative';
+    if (!titEl) { titEl = document.createElement('div'); titEl.id = 'tit'; titEl.className = 'tit'; titEl.onclick = window.titPoke; titEl.innerHTML = TIT + '<div class="tit-b"></div>'; }
+    if (titEl.parentNode !== par) par.appendChild(titEl);
+    titEl.style.display = '';
+    if (Date.now() < titBusy && from == null && titIdx === at) { foldTo(Math.min(titKeep, at)); return; }   // 還在走路：不要打斷
+    if (from == null) { titEl.classList.toggle('fin', idx < 0); foldTo(at); place(at, false); }
+    else {
+      const keep = Math.min(from, at); titKeep = keep; titBusy = Date.now() + 1900;
+      foldTo(keep); place(from, false);
+      titEl.className = 'tit walk ' + (dir === 'f' ? 'cheer' : 'angry') + (idx < 0 && dir === 'f' ? ' fin' : '');
+      titSay(dir === 'f' ? ['太棒了！', '完成～下一站出發！', '耶～'][Math.random() * 3 | 0] : '不要亂玩行程!!!', 2400);
+      const tok = ++titTok; titEl.getBoundingClientRect();
+      requestAnimationFrame(() => requestAnimationFrame(() => { if (tok === titTok) place(at, true); }));
+      setTimeout(() => { if (tok !== titTok) return; titEl.classList.remove('walk', 'cheer', 'angry'); foldTo(at); place(at, true); }, 1900);
+    }
+    titIdx = at; titDay = d.date;
   }
   window.tickEv = key => {
     const d = data.days[currentDayIndex], first = () => { const i = d.events.findIndex(e => !DONE[evKey(d, e)]); return i < 0 ? d.events.length : i; };
