@@ -597,25 +597,54 @@
   function evKey(d, e) { return e.id || hash(d.date + '|' + (e.time || e.depTime || '') + '|' + (e.title || '')); }
   const todayStr = () => { const n = new Date(); return n.getFullYear() + '-' + String(n.getMonth() + 1).padStart(2, '0') + '-' + String(n.getDate()).padStart(2, '0'); };
   const seenT = () => +localStorage.getItem('tit_' + trip) || 0;
-  const TIT = '<svg viewBox="0 0 44 44"><g class="tit-tail"><path d="M26 36Q37 38 42 47" stroke="#4A4044" stroke-width="3.4" stroke-linecap="round" fill="none"/><path d="M26 36Q37 38 42 47" stroke="#fff" stroke-width=".9" stroke-linecap="round" fill="none" opacity=".6"/></g><path d="M16 38v4M28 38v4" stroke="#2B2626" stroke-width="1.8" stroke-linecap="round"/><g class="tit-wl"><path d="M12 15Q-1 20 3 34Q13 31 16 21Z" fill="#B9A79A"/><path d="M12 15Q-1 20 3 34" stroke="#3B3436" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="tit-wr"><path d="M32 15Q45 20 41 34Q31 31 28 21Z" fill="#B9A79A"/><path d="M32 15Q45 20 41 34" stroke="#3B3436" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><circle cx="22" cy="22.5" r="18" fill="#fff" stroke="#EAE2DA"/><ellipse cx="22" cy="33" rx="12" ry="6" fill="#F4EFEA" opacity=".5"/><circle cx="15" cy="21" r="2" fill="#2B2626"/><circle cx="15.7" cy="20.2" r=".7" fill="#fff"/><circle cx="29" cy="21" r="2" fill="#2B2626"/><circle cx="29.7" cy="20.2" r=".7" fill="#fff"/><path d="M20.2 24.6Q22 23.6 23.8 24.6Q22 27.8 20.2 24.6Z" fill="#3A3436"/><ellipse class="tit-ck" cx="10.5" cy="26" rx="2.8" ry="2" fill="#F4B6B6" opacity=".55"/><ellipse class="tit-ck" cx="33.5" cy="26" rx="2.8" ry="2" fill="#F4B6B6" opacity=".55"/><path class="tit-br" d="M10.5 15.5L18 18.2M33.5 15.5L26 18.2" stroke="#2B2626" stroke-width="1.8" stroke-linecap="round"/></svg>';
+  const TIT = '<svg viewBox="0 0 44 44"><g class="tit-tail"><path d="M26 36Q37 38 42 47" stroke="#4A4044" stroke-width="3.4" stroke-linecap="round" fill="none"/><path d="M26 36Q37 38 42 47" stroke="#fff" stroke-width=".9" stroke-linecap="round" fill="none" opacity=".6"/></g><path d="M16 38v4M28 38v4" stroke="#2B2626" stroke-width="1.8" stroke-linecap="round"/><g class="tit-wl"><path d="M12 15Q-1 20 3 34Q13 31 16 21Z" fill="#B9A79A"/><path d="M12 15Q-1 20 3 34" stroke="#3B3436" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><g class="tit-wr"><path d="M32 15Q45 20 41 34Q31 31 28 21Z" fill="#B9A79A"/><path d="M32 15Q45 20 41 34" stroke="#3B3436" stroke-width="2.2" stroke-linecap="round" fill="none"/></g><circle cx="22" cy="22.5" r="18" fill="#fff" stroke="#EAE2DA"/><ellipse cx="22" cy="33" rx="12" ry="6" fill="#F4EFEA" opacity=".5"/><g class="tit-ey"><circle cx="15" cy="21" r="2" fill="#2B2626"/><circle cx="15.7" cy="20.2" r=".7" fill="#fff"/><circle cx="29" cy="21" r="2" fill="#2B2626"/><circle cx="29.7" cy="20.2" r=".7" fill="#fff"/></g><path d="M20.2 24.6Q22 23.6 23.8 24.6Q22 27.8 20.2 24.6Z" fill="#3A3436"/><ellipse class="tit-ck" cx="10.5" cy="26" rx="2.8" ry="2" fill="#F4B6B6" opacity=".55"/><ellipse class="tit-ck" cx="33.5" cy="26" rx="2.8" ry="2" fill="#F4B6B6" opacity=".55"/><path class="tit-br" d="M10.5 15.5L18 18.2M33.5 15.5L26 18.2" stroke="#2B2626" stroke-width="1.1" stroke-linecap="round"/><path class="tit-cl" d="M12.5 21Q15 23.6 17.5 21M26.5 21Q29 23.6 31.5 21" stroke="#2B2626" stroke-width="1.5" stroke-linecap="round" fill="none"/><path class="tit-sb" d="M10.5 18.2L18 15.6M33.5 18.2L26 15.6" stroke="#2B2626" stroke-width="1.1" stroke-linecap="round"/><path class="p-tear" d="M12.5 25Q11 28 12.5 29.5Q14 28 12.5 25Z" fill="#8EC5F0"/><g class="p-cam"><rect x="9" y="27" width="16" height="10" rx="2" fill="#4A4A55"/><rect x="12" y="25" width="6" height="3" rx="1" fill="#4A4A55"/><circle cx="17" cy="32" r="3.4" fill="#CDEBFF" stroke="#2B2626"/></g><text class="p-flash" x="26" y="26" font-size="10" fill="#F6C945">✦</text><g class="p-bun"><circle cx="22" cy="30" r="5" fill="#F6E3C3" stroke="#D9B98A"/><path d="M19 29Q22 27 25 29" stroke="#D9B98A" fill="none" stroke-width=".8"/></g><g class="p-slip"><rect x="31" y="14" width="8" height="19" rx="1" fill="#fff" stroke="#E09F9F"/><rect x="31" y="14" width="8" height="4" fill="#E09F9F"/><path d="M33.5 21h3M33.5 24h3M33.5 27h3" stroke="#C9A0A0" stroke-width=".8"/></g><text class="p-z" x="31" y="9" font-size="8" fill="#7F96AC">z</text><text class="p-z" x="35" y="4" font-size="6" fill="#7F96AC" style="animation-delay:.8s">z</text></svg>';
   const TITSAY = ['啾啾！', '今天也要慢慢玩～', '我的尾巴很長喔', '不用趕時間啦', '要記得喝水喔', '好期待下一站！', '肚子餓了嗎？', '長尾山雀最可愛了（自己說）'];
-  let titTm = 0;
+  const PL = {
+    FIRST: ['好興奮!', '昨天開始就睡不著了!!', '要出發了嗎?', '要準備出發了!!', '出去玩～', '好快樂', '啾啾啾～', '起床了嗎?'],
+    LAST: ['要回家了', '快樂的時光總是過得特別快...', '明天又要上班...', '下次什麼時候再去玩?', '再會', '好累喔...', '該回家了'],
+    MEAL: ['不可能正餐吃不下吧?', '吃飯飯了!', '好餓喔!', '今天吃什麼?', '我吃得下!!', '欠吃!'],
+    SNACK: ['我還飽著...先不吃...', '怎麼又要吃?', '看起來很好吃欸', '我已經吃不下了...'],
+    NIGHT: ['可以吧?才第幾餐?', '加油加油', '吃吃吃!'],
+    PHOTO: ['給雀雀笑一個', '拍個紀念照～', '很好很上鏡!'],
+    OMI: ['本多終勝啦!!', '抽到大吉了沒?', '拜託!拜託!財運旺旺!', '我抽到大吉!', '抽籤也是本多終勝嗎?'],
+    CHARM: ['買個御守', '來蒐集御朱印!', '去抽籤嗎?'],
+    HOTEL: ['已躺好!', '晚安～', '再睡一下', '我已經睡著了', '啾啾', '今天會有個好夢'],
+    HOTELAM: ['早上了嗎?', '我還沒睡飽', '集合時間還沒到...', '我再睡十分鐘...', '今天不化妝多睡一點', '睡到亮晶晶!起床!', '再睡就來不及了!', '起床!!化妝!!']
+  };
+  const NEST_B = '<ellipse cx="30" cy="12" rx="28" ry="11" fill="#7E5C3C"/>';
+  const NEST_F = '<path d="M2 12Q3 34 30 34Q57 34 58 12Q30 22 2 12Z" fill="#B38A5E" stroke="#8F6B47"/><path d="M8 20Q30 26 52 20M12 27Q30 32 48 27" stroke="#8F6B47" stroke-width="1.4" fill="none" stroke-linecap="round"/>';
+  let titTm = 0, titCtx = { cat: 'other', first: false, last: false, dayFirst: false };
   function titSay(t, ms) { const b = document.querySelector('#tit .tit-b'); if (!b) return; b.textContent = t; b.classList.add('on'); clearTimeout(titTm); titTm = setTimeout(() => b.classList.remove('on'), ms || 2600); }
-  window.titPoke = () => { const el = $('tit'); if (!el || el.classList.contains('walk')) return; if (Math.random() < .35) { el.classList.add('roll'); titSay('咕嚕咕嚕～', 1400); setTimeout(() => el.classList.remove('roll'), 1100); } else titSay(TITSAY[Math.random() * TITSAY.length | 0]); };
-  // 長尾山雀是獨立的一層，不會跟著行程列表重畫，所以可以慢慢走過去；已完成的行程會折疊起來
-  let titEl = null, titIdx = null, titDay = '', titTok = 0, titBusy = 0, titKeep = 0; const foldOpen = {};
+  function titAct(a, ms) { const el = $('tit'); if (!el || !a) return; const c = a === 'roll' ? 'roll' : 'a-' + a; el.classList.add(c); setTimeout(() => el.classList.remove(c), ms); }
+  window.titPoke = () => {
+    const el = $('tit'); if (!el || el.classList.contains('walk')) return;
+    const c = titCtx, r = Math.random(); let a = null, ms = 1400, L = TITSAY;
+    if (c.cat === 'hotel') { a = pick(['sleep', 'rest', 'flap']); ms = 2600; L = c.dayFirst ? PL.HOTELAM : PL.HOTEL; }
+    else if (c.first) { a = r < .35 ? 'roll' : r < .6 ? 'sway' : null; L = PL.FIRST; ms = 1600; }
+    else if (c.last) { a = 'sad'; ms = 2400; L = PL.LAST; }
+    else if (c.cat === 'meal') { a = r < .5 ? 'sway' : 'eat'; ms = a === 'eat' ? 2200 : 1600; L = PL.MEAL; }
+    else if (c.cat === 'spot' && r < .4) { a = 'photo'; ms = 1800; L = PL.PHOTO; }
+    else if (c.cat === 'shrine' && r < .4) { a = 'omi'; ms = 2000; L = PL.OMI; }
+    else { if (Math.random() < .35) a = 'roll'; L = c.cat === 'shrine' ? TITSAY.concat(PL.CHARM) : c.cat === 'snack' ? TITSAY.concat(PL.SNACK) : c.cat === 'night' ? TITSAY.concat(PL.NIGHT) : TITSAY; }
+    titSay(pick(L), a === 'sad' ? 2400 : 2600); titAct(a, ms);
+  };
+  // 長尾山雀是獨立的一層，不會跟著行程列表重畫；已完成的行程折疊；飯店旁有鳥窩
+  let titEl = null, nestF = null, titIdx = null, titDay = '', titTok = 0, titBusy = 0, titKeep = 0; const foldOpen = {};
+  const CATN = e => { const c = e && e.category; return c === 'food' ? 'meal' : (c || 'other'); };
   window.foldTog = () => { const d = data.days[currentDayIndex]; foldOpen[d.date] = !foldOpen[d.date]; renderTit(); };
-  function titHide() { if (titEl) titEl.style.display = 'none'; titIdx = null; }
+  function titHide() { if (titEl) titEl.style.display = 'none'; if (nestF) nestF.style.display = 'none'; titIdx = null; }
   function renderTit() {
-    document.querySelectorAll('#itinerary-list .tick, #itinerary-list .fold-bar').forEach(x => x.remove());
+    document.querySelectorAll('#itinerary-list .tick, #itinerary-list .fold-bar, #itinerary-list .nest').forEach(x => x.remove());
     const d = data.days[currentDayIndex], list = $('itinerary-list');
-    if (!d || !list || d.date > todayStr()) return titHide();   // 還沒到的日子：不出現長尾山雀、也不能打勾
+    if (!d || !list || d.date > todayStr()) return titHide();
     const ws = [...list.querySelectorAll('.timeline-card-wrapper')]; if (!ws.length) return titHide();
-    ws.forEach(w => { const e = d.events[+w.dataset.idx], k = evKey(d, e), on = !!DONE[k]; w.dataset.k = k; w.classList.toggle('ev-done', on); w.querySelector('.card').insertAdjacentHTML('beforeend', `<div class="tick ${on ? 'on' : ''}" onclick="tickEv('${k}')">✓</div>`); });
+    ws.forEach(w => { const e = d.events[+w.dataset.idx], k = evKey(d, e), on = !!DONE[k]; w.dataset.k = k; w.classList.toggle('ev-done', on); w.querySelector('.card').insertAdjacentHTML('beforeend', `<div class="tick ${on ? 'on' : ''}" onclick="tickEv('${k}')">✓</div>`); if (CATN(e) === 'hotel') w.insertAdjacentHTML('beforeend', `<div class="nest"><svg viewBox="0 0 60 36" width="60" height="36">${NEST_B}${NEST_F}</svg></div>`); });
     const idx = ws.findIndex(w => !DONE[w.dataset.k]), at = idx < 0 ? ws.length - 1 : idx, active = $('page-itinerary').classList.contains('active'), open = !!foldOpen[d.date];
+    const catOf = i => CATN(d.events[+ws[Math.max(0, Math.min(ws.length - 1, i))].dataset.idx]), atCat = catOf(at), atHotel = atCat === 'hotel';
+    titCtx = { cat: atCat, first: currentDayIndex === 0 && at === 0, last: currentDayIndex === data.days.length - 1 && at === ws.length - 1, dayFirst: at === 0 };
     const live = () => [...list.querySelectorAll('.timeline-card-wrapper')];
     const foldTo = n => live().forEach((w, i) => w.classList.toggle('ev-fold', !open && i < n));
-    const place = (i, anim) => { const L = live(), w = L[Math.max(0, Math.min(L.length - 1, i))]; titEl.style.transition = anim ? '' : 'none'; titEl.style.top = (list.offsetTop + w.offsetTop + 44) + 'px'; titEl.style.left = (list.offsetLeft + w.offsetLeft + 8) + 'px'; };
+    const place = (i, anim, nested) => { const L = live(), w = L[Math.max(0, Math.min(L.length - 1, i))]; titEl.style.transition = anim ? '' : 'none'; titEl.style.top = (list.offsetTop + w.offsetTop + 44 + (nested ? 6 : 0)) + 'px'; titEl.style.left = (list.offsetLeft + w.offsetLeft + 8) + 'px'; nestF.style.display = nested ? '' : 'none'; if (nested) { nestF.style.top = (list.offsetTop + w.offsetTop + 62) + 'px'; nestF.style.left = (list.offsetLeft + w.offsetLeft + 2) + 'px'; } };
     if (at > 0) { const bar = document.createElement('div'); bar.className = 'fold-bar'; bar.innerHTML = `✓ 已完成 ${at} 個行程　${open ? '▴ 收起' : '▾ 展開'}`; bar.onclick = window.foldTog; list.insertBefore(bar, ws[at]); }
     const m = MASC, pend = m && m.d === d.date && m.t > seenT() && Date.now() - m.t < 432e5;
     let from = null, dir = null;
@@ -626,19 +655,25 @@
     }
     if (from != null) from = Math.min(from, ws.length - 1); if (from === at) from = null;
     const par = list.parentNode; if (getComputedStyle(par).position === 'static') par.style.position = 'relative';
-    if (!titEl) { titEl = document.createElement('div'); titEl.id = 'tit'; titEl.className = 'tit'; titEl.onclick = window.titPoke; titEl.innerHTML = TIT + '<div class="tit-b"></div>'; }
-    if (titEl.parentNode !== par) par.appendChild(titEl);
+    if (!titEl) { titEl = document.createElement('div'); titEl.id = 'tit'; titEl.className = 'tit'; titEl.onclick = window.titPoke; titEl.innerHTML = TIT + '<div class="tit-b"></div>'; nestF = document.createElement('div'); nestF.id = 'nest-f'; nestF.innerHTML = `<svg viewBox="0 0 60 36" width="60" height="36">${NEST_F}</svg>`; }
+    if (titEl.parentNode !== par) { par.appendChild(titEl); par.appendChild(nestF); }
     titEl.style.display = '';
-    if (Date.now() < titBusy && from == null && titIdx === at) { foldTo(Math.min(titKeep, at)); return; }   // 還在走路：不要打斷
-    if (from == null) { titEl.classList.toggle('fin', idx < 0); foldTo(at); place(at, false); }
+    const base = () => 'tit' + (idx < 0 ? ' fin' : '') + (atHotel ? ' innest' : '');
+    if (Date.now() < titBusy && from == null && titIdx === at) { foldTo(Math.min(titKeep, at)); return; }
+    if (from == null) { titEl.className = base(); foldTo(at); place(at, false, atHotel); }
     else {
-      const keep = Math.min(from, at); titKeep = keep; titBusy = Date.now() + 1900;
-      foldTo(keep); place(from, false);
-      titEl.className = 'tit walk ' + (dir === 'f' ? 'cheer' : 'angry') + (idx < 0 && dir === 'f' ? ' fin' : '');
-      titSay(dir === 'f' ? ['太棒了！', '完成～下一站出發！', '耶～'][Math.random() * 3 | 0] : '不要亂玩行程!!!', 2400);
+      const fromCat = catOf(from), fwd = dir === 'f', air = fwd ? (fromCat === 'flight' || fromCat === 'transport') : (atCat === 'flight' || atCat === 'transport'), keep = Math.min(from, at);
+      let cls = 'tit walk ', say;
+      if (fwd) { cls += 'cheer'; say = fromCat === 'hotel' ? pick(['又有力氣繼續逛街了!', '休息結束!繼續吃!']) : pick(['太棒了！', '完成～下一站出發！', '耶～']); }
+      else if (fromCat === 'hotel') { cls += 'a-sad'; say = '我剛窩好欸...'; }
+      else { cls += 'angry'; say = atCat === 'flight' ? '再玩行程你現在買機票飛回去!' : atCat === 'transport' ? '搭車很累!不要鬧!' : '不要亂玩行程!!!'; }
+      if (air) cls += ' fly' + (fwd ? '' : ' cheer');
+      titKeep = keep; titBusy = Date.now() + 1900;
+      foldTo(keep); place(from, false, fromCat === 'hotel');
+      titEl.className = cls; titSay(say, 2400);
       const tok = ++titTok; titEl.getBoundingClientRect();
-      requestAnimationFrame(() => requestAnimationFrame(() => { if (tok === titTok) place(at, true); }));
-      setTimeout(() => { if (tok !== titTok) return; titEl.classList.remove('walk', 'cheer', 'angry'); foldTo(at); place(at, true); }, 1900);
+      requestAnimationFrame(() => requestAnimationFrame(() => { if (tok === titTok) place(at, true, false); }));
+      setTimeout(() => { if (tok !== titTok) return; titEl.className = base(); foldTo(at); place(at, true, atHotel); }, 1900);
     }
     titIdx = at; titDay = d.date;
   }
@@ -653,6 +688,12 @@
   const _ri3 = renderItinerary; renderItinerary = function () { _ri3(); renderTit(); };
   const _sp = switchPage; switchPage = function (pid, el) { _sp(pid, el); if (pid === 'itinerary') renderTit(); };
   const _tpv = togglePublicView; togglePublicView = function () { _tpv(); renderStats(); };
+
+  // ---------- 行程類別：新增飯店、神社，美食拆成正餐／點心／消夜 ----------
+  if (typeof CAT_CONFIG !== 'undefined') Object.assign(CAT_CONFIG, { shrine: { color: '#E08A8A', name: '神社' }, hotel: { color: '#9AA8D6', name: '飯店' }, meal: { color: '#E3D081', name: '正餐' }, snack: { color: '#F0B89A', name: '點心' }, night: { color: '#8E7FB8', name: '消夜' } });
+  if ($('evt-cat')) $('evt-cat').innerHTML = '<option value="spot">⛩️ 景點</option><option value="shrine">⛩️ 神社</option><option value="hotel">🏨 飯店</option><option value="transport">🚅 交通</option><option value="flight">✈️ 航班</option><option value="meal">🍜 正餐</option><option value="snack">🍡 點心</option><option value="night">🍢 消夜</option><option value="shop">🛍️ 購物</option><option value="other">📝 其他</option>';
+  const _riCat = renderItinerary;
+  renderItinerary = function () { data.days.forEach(x => (x.events || []).forEach(e => { if (e.category === 'food') e.category = 'meal'; })); _riCat(); };
 
   // ---------- 類別管理 ----------
   const catSave = () => { saveData(); renderExpenseList(); renderTotalOverview(); catManage(); };
