@@ -239,3 +239,22 @@ details.info-card .bag{display:block;justify-content:flex-start}
 
 .tit-wl{transform-origin:11px 17px}.tit-wr{transform-origin:33px 17px}
 @keyframes twl{50%{transform:rotate(55deg)}}@keyframes twr{50%{transform:rotate(-55deg)}}
+
+/* 長尾山雀：道具、動作、鳥窩 */
+.tit{z-index:6}
+.tit-br{stroke-width:1.1}
+.nest{position:absolute;left:2px;top:62px;pointer-events:none}
+#nest-f{position:absolute;pointer-events:none;z-index:7;width:60px;height:36px}
+.p-cam,.p-flash,.p-bun,.p-slip,.p-z,.p-tear,.tit-cl,.tit-sb{opacity:0}
+.tit.a-sway svg{animation:tsway .5s ease-in-out 3}@keyframes tsway{25%{transform:rotate(-12deg)}75%{transform:rotate(12deg)}}
+.tit.a-photo .p-cam{opacity:1}.tit.a-photo .p-flash{animation:tflash 1.6s}@keyframes tflash{0%,40%{opacity:0}50%{opacity:1}60%,100%{opacity:0}}
+.tit.a-eat svg{animation:teat .5s ease-in-out 4}@keyframes teat{50%{transform:rotate(10deg) translateY(2px)}}
+.tit.a-eat .p-bun{opacity:1;transform-origin:22px 30px;animation:tbun 2s forwards}@keyframes tbun{from{transform:scale(1)}to{transform:scale(.25)}}
+.tit.a-omi .p-slip{opacity:1;transform-origin:35px 14px;animation:tslip 1.8s ease-out}@keyframes tslip{from{transform:scaleY(.1)}to{transform:scaleY(1)}}
+.tit.a-sad svg{transform:translateY(3px) scaleY(.94)}.tit.a-sad .tit-sb,.tit.a-sad .p-tear{opacity:1}.tit.a-sad .p-tear{animation:ttear 1s infinite}.tit.a-sad .tit-br{opacity:0}
+@keyframes ttear{from{transform:translateY(0);opacity:1}to{transform:translateY(5px);opacity:0}}
+.tit.innest .tit-cl,.tit.a-sleep .tit-cl,.tit.a-rest .tit-cl{opacity:1}.tit.innest .tit-ey,.tit.a-sleep .tit-ey,.tit.a-rest .tit-ey{opacity:0}
+.tit.innest .p-z,.tit.a-sleep .p-z{opacity:1;animation:tz 2.4s infinite}@keyframes tz{0%{transform:translate(0,3px);opacity:0}30%{opacity:1}100%{transform:translate(4px,-6px);opacity:0}}
+.tit.a-rest svg{animation:tbreath 1.6s ease-in-out infinite}@keyframes tbreath{50%{transform:scale(1.05)}}
+.tit.a-flap .tit-wl{animation:twl .18s infinite}.tit.a-flap .tit-wr{animation:twr .18s infinite}
+.tit.fly svg{animation:tflyb .4s ease-in-out infinite}@keyframes tflyb{50%{transform:translateY(-5px)}}
