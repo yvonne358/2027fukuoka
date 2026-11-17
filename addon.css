@@ -258,3 +258,9 @@ details.info-card .bag{display:block;justify-content:flex-start}
 .tit.a-rest svg{animation:tbreath 1.6s ease-in-out infinite}@keyframes tbreath{50%{transform:scale(1.05)}}
 .tit.a-flap .tit-wl{animation:twl .18s infinite}.tit.a-flap .tit-wr{animation:twr .18s infinite}
 .tit.fly svg{animation:tflyb .4s ease-in-out infinite}@keyframes tflyb{50%{transform:translateY(-5px)}}
+
+/* ---- 調整：須知標題靠左、已完成行程只顯示標題、頂部收起列 ---- */
+.info-card summary>span:first-child{flex:1;min-width:0;text-align:left}
+.ev-done .evt-img,.ev-done .event-loc-row,.ev-done .event-note-box,.ev-done .flight-visual,.ev-done .transport-visual,.ev-done .card-actions-bar{display:none!important}
+.ev-done .event-title-large{margin-bottom:0;padding-right:38px}
+.fold-bar.fold-top{margin-top:0}
