@@ -631,21 +631,30 @@
   // 長尾山雀是獨立的一層，不會跟著行程列表重畫；已完成的行程折疊；飯店旁有鳥窩
   let titEl = null, nestF = null, titIdx = null, titDay = '', titTok = 0, titBusy = 0, titKeep = 0; const foldOpen = {};
   const CATN = e => { const c = e && e.category; return c === 'food' ? 'meal' : (c || 'other'); };
-  window.foldTog = () => { const d = data.days[currentDayIndex]; foldOpen[d.date] = !foldOpen[d.date]; renderTit(); };
-  function titHide() { if (titEl) titEl.style.display = 'none'; if (nestF) nestF.style.display = 'none'; titIdx = null; }
+  window.foldTog = () => { const d = data.days[currentDayIndex], was = !!foldOpen[d.date]; foldOpen[d.date] = !was; renderTit(); if (was) { const b = document.querySelector('#itinerary-list .fold-bar'); if (b) b.scrollIntoView({ block: 'center', behavior: 'smooth' }); } };
+  let titRe = null;
+  if (window.ResizeObserver) { const lst = $('itinerary-list'); if (lst) new ResizeObserver(() => { if (titRe) titRe(); }).observe(lst); }
+  function titHide() { if (titEl) titEl.style.display = 'none'; if (nestF) nestF.style.display = 'none'; titIdx = null; titRe = null; }
   function renderTit() {
     document.querySelectorAll('#itinerary-list .tick, #itinerary-list .fold-bar, #itinerary-list .nest').forEach(x => x.remove());
     const d = data.days[currentDayIndex], list = $('itinerary-list');
     if (!d || !list || d.date > todayStr()) return titHide();
     const ws = [...list.querySelectorAll('.timeline-card-wrapper')]; if (!ws.length) return titHide();
-    ws.forEach(w => { const e = d.events[+w.dataset.idx], k = evKey(d, e), on = !!DONE[k]; w.dataset.k = k; w.classList.toggle('ev-done', on); w.querySelector('.card').insertAdjacentHTML('beforeend', `<div class="tick ${on ? 'on' : ''}" onclick="tickEv('${k}')">✓</div>`); if (CATN(e) === 'hotel') w.insertAdjacentHTML('beforeend', `<div class="nest"><svg viewBox="0 0 60 36" width="60" height="36">${NEST_B}${NEST_F}</svg></div>`); });
+    const isToday = d.date === todayStr();
+    ws.forEach(w => { const e = d.events[+w.dataset.idx], k = evKey(d, e), on = !!DONE[k]; w.dataset.k = k; w.classList.toggle('ev-done', on); w.querySelector('.card').insertAdjacentHTML('beforeend', `<div class="tick ${on ? 'on' : ''}" onclick="tickEv('${k}')">✓</div>`); if (isToday && CATN(e) === 'hotel') w.insertAdjacentHTML('beforeend', `<div class="nest"><svg viewBox="0 0 60 36" width="60" height="36">${NEST_B}${NEST_F}</svg></div>`); });
     const idx = ws.findIndex(w => !DONE[w.dataset.k]), at = idx < 0 ? ws.length - 1 : idx, active = $('page-itinerary').classList.contains('active'), open = !!foldOpen[d.date];
     const catOf = i => CATN(d.events[+ws[Math.max(0, Math.min(ws.length - 1, i))].dataset.idx]), atCat = catOf(at), atHotel = atCat === 'hotel';
     titCtx = { cat: atCat, first: currentDayIndex === 0 && at === 0, last: currentDayIndex === data.days.length - 1 && at === ws.length - 1, dayFirst: at === 0 };
     const live = () => [...list.querySelectorAll('.timeline-card-wrapper')];
     const foldTo = n => live().forEach((w, i) => w.classList.toggle('ev-fold', !open && i < n));
     const place = (i, anim, nested) => { const L = live(), w = L[Math.max(0, Math.min(L.length - 1, i))]; titEl.style.transition = anim ? '' : 'none'; titEl.style.top = (list.offsetTop + w.offsetTop + 44 + (nested ? 6 : 0)) + 'px'; titEl.style.left = (list.offsetLeft + w.offsetLeft + 8) + 'px'; nestF.style.display = nested ? '' : 'none'; if (nested) { nestF.style.top = (list.offsetTop + w.offsetTop + 62) + 'px'; nestF.style.left = (list.offsetLeft + w.offsetLeft + 2) + 'px'; } };
-    if (at > 0) { const bar = document.createElement('div'); bar.className = 'fold-bar'; bar.innerHTML = `✓ 已完成 ${at} 個行程　${open ? '▴ 收起' : '▾ 展開'}`; bar.onclick = window.foldTog; list.insertBefore(bar, ws[at]); }
+    if (at > 0) {
+      const mk = top => { const bar = document.createElement('div'); bar.className = 'fold-bar' + (top ? ' fold-top' : ''); bar.innerHTML = `✓ 已完成 ${at} 個行程　${open ? '▴ 收起' : '▾ 展開'}`; bar.onclick = window.foldTog; return bar; };
+      list.insertBefore(mk(false), ws[at]);
+      if (open) list.insertBefore(mk(true), ws[0]);   // 展開後，最上面也能收起
+    }
+    if (!isToday) { foldTo(at); return titHide(); }   // 不是今天：不顯示長尾山雀
+    titRe = () => { if (Date.now() >= titBusy && titEl && titEl.style.display !== 'none') place(at, false, atHotel); };   // 版面變動時重新對位
     const m = MASC, pend = m && m.d === d.date && m.t > seenT() && Date.now() - m.t < 432e5;
     let from = null, dir = null;
     if (active) {
@@ -680,7 +689,7 @@
   window.tickEv = key => {
     const d = data.days[currentDayIndex], first = () => { const i = d.events.findIndex(e => !DONE[evKey(d, e)]); return i < 0 ? d.events.length : i; };
     const from = first(), on = !DONE[key];
-    if (on) DONE[key] = Date.now(); else delete DONE[key];
+    if (on) { DONE[key] = Date.now(); foldOpen[d.date] = false; } else delete DONE[key];   // 完成後自動收起已完成區
     const to = first(), m = from !== to ? { d: d.date, dir: to > from ? 'f' : 'b', from, to, t: Date.now() } : null;
     ready.then(() => { ref.child('done/' + key).set(on ? Date.now() : null); if (m) ref.child('mascot').set(m); }).catch(() => toast('❌ 同步失敗', 1));
     if (m) MASC = m; renderItinerary();
