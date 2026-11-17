@@ -30,14 +30,16 @@
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
   const trip = new URLSearchParams(location.search).get('trip') || 'default';
   // ---------- 每個旅程各自的主畫面名稱／圖示（圖片檔放在 index.html 同一個資料夾）----------
-  // 格式：'旅程代碼': { name: '主畫面顯示的名稱', icon: '主畫面圖示.png', bg: '內頁背景圖.jpg' }，三項都可以只寫需要的；沒列在這裡的旅程用預設值
+  // 旅程代碼只需要寫「前半段」：網址的代碼是『前半段-後半段』時，這裡寫前半段（例如 fukuoka2027）就會對應到，後半段不用（也不要）寫進來
+  // 格式：'前半段': { name: '主畫面顯示的名稱', icon: '主畫面圖示.png', bg: '內頁背景圖.jpg' }，三項都可以只寫需要的；沒列在這裡的旅程用預設值
   const TRIP_APP = {
-    // 'fukuoka2027-xxxxxxxx': { name: '福岡之旅', icon: 'icon-fukuoka.png', bg: 'bg-fukuoka.jpg' },
+    // 'fukuoka2027': { name: '福岡之旅', icon: 'icon-fukuoka.png', bg: 'bg-fukuoka.jpg' },
   };
-  { const c = TRIP_APP[trip]; if (c && c.bg) document.documentElement.style.setProperty('--hero-img', "url('" + new URL(c.bg, location.href).href + "')"); }   // 這個旅程的內頁背景圖
+  const tripCfg = () => { let best = null; for (const k in TRIP_APP) if ((trip === k || trip.startsWith(k + '-')) && (best === null || k.length > best.length)) best = k; return TRIP_APP[best] || {}; };   // 取最長的相符前半段
+  { const c = tripCfg(); if (c && c.bg) document.documentElement.style.setProperty('--hero-img', "url('" + new URL(c.bg, location.href).href + "')"); }   // 這個旅程的內頁背景圖
   (async () => {
     try {
-      const m = await (await fetch('manifest.json')).json(), c = TRIP_APP[trip] || {}, abs = u => new URL(u, location.href).href;
+      const m = await (await fetch('manifest.json')).json(), c = tripCfg(), abs = u => new URL(u, location.href).href;
       m.start_url = location.origin + location.pathname + (trip === 'default' ? '' : '?trip=' + encodeURIComponent(trip));   // 從主畫面開啟時，直接進到這個旅程
       m.scope = abs('./');
       if (c.name) m.name = m.short_name = c.name;
