@@ -267,3 +267,6 @@ details.info-card .bag{display:block;justify-content:flex-start}
 body:not(.admin-mode) .ev-done .card-actions-bar{display:none!important}
 .ev-done .event-title-large{margin-bottom:0;padding-right:38px}
 .fold-bar.fold-top{margin-top:0}
+
+/* 各旅程的內頁背景圖：沒設定時用原本的 header-bg.jpg */
+.hero-header.hero-header{background-image:linear-gradient(to bottom,rgba(248,248,246,.2) 0%,rgba(248,248,246,.6) 70%,rgba(248,248,246,1) 100%),var(--hero-img,url('header-bg.jpg'))}
