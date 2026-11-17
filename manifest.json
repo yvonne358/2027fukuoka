@@ -1,7 +1,7 @@
 {
   "name": "福岡之旅",
   "short_name": "福岡之旅",
-  "start_url": "./index.html",
+  "start_url": "./index.html?trip=fukuoka2027-k7x9louenc56heu3ue8p",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
