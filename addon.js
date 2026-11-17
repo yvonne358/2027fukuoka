@@ -29,6 +29,25 @@
   window.mdW = (id, a, b) => { const t = $(id); if (!t) return; const st = t.selectionStart, en = t.selectionEnd, v = t.value, sel = v.slice(st, en) || '文字'; t.value = v.slice(0, st) + a + sel + b + v.slice(en); t.focus(); t.setSelectionRange(st + a.length, st + a.length + sel.length); };
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
   const trip = new URLSearchParams(location.search).get('trip') || 'default';
+  // ---------- 每個旅程各自的主畫面名稱／圖示（圖片檔放在 index.html 同一個資料夾）----------
+  // 格式：'旅程代碼': { name: '主畫面顯示的名稱', icon: '主畫面圖示.png', bg: '內頁背景圖.jpg' }，三項都可以只寫需要的；沒列在這裡的旅程用預設值
+  const TRIP_APP = {
+    // 'fukuoka2027-xxxxxxxx': { name: '福岡之旅', icon: 'icon-fukuoka.png', bg: 'bg-fukuoka.jpg' },
+  };
+  { const c = TRIP_APP[trip]; if (c && c.bg) document.documentElement.style.setProperty('--hero-img', "url('" + new URL(c.bg, location.href).href + "')"); }   // 這個旅程的內頁背景圖
+  (async () => {
+    try {
+      const m = await (await fetch('manifest.json')).json(), c = TRIP_APP[trip] || {}, abs = u => new URL(u, location.href).href;
+      m.start_url = location.origin + location.pathname + (trip === 'default' ? '' : '?trip=' + encodeURIComponent(trip));   // 從主畫面開啟時，直接進到這個旅程
+      m.scope = abs('./');
+      if (c.name) m.name = m.short_name = c.name;
+      m.icons = (m.icons || []).map(i => Object.assign({}, i, { src: abs(c.icon || i.src) }));
+      let l = document.querySelector('link[rel=manifest]'); if (!l) { l = document.createElement('link'); l.rel = 'manifest'; document.head.appendChild(l); }
+      l.href = URL.createObjectURL(new Blob([JSON.stringify(m)], { type: 'application/manifest+json' }));
+      if (c.icon) document.querySelectorAll('link[rel=apple-touch-icon],link[rel=icon]').forEach(x => { x.href = abs(c.icon); });
+      if (c.name) { const t = document.querySelector('meta[name=apple-mobile-web-app-title]'); if (t) t.content = c.name; document.title = c.name; }
+    } catch (e) { }
+  })();
   // 管理員模式閒置自動上鎖（分鐘；設 0 代表不自動上鎖）
   const AUTO_LOCK_MIN = 5; let lastAct = Date.now();
   ['click', 'touchstart', 'keydown'].forEach(e => document.addEventListener(e, () => { lastAct = Date.now(); }, true));
@@ -373,11 +392,16 @@
   };
   const blank = () => ({ days: [{ date: new Date().toISOString().split('T')[0], title: '第一天', location: 'Fukuoka', events: [] }], expenses: [], members: ['我', '朋友A'], settings: {} });
   const toast = (t, bad) => { const s = document.createElement('div'); s.style.cssText = 'position:fixed;top:10px;left:50%;transform:translateX(-50%);color:#fff;padding:5px 15px;border-radius:20px;font-size:.8rem;z-index:9999;background:' + (bad ? '#d33' : '#4A423D'); s.innerText = t; document.body.appendChild(s); setTimeout(() => s.remove(), 2000); };
+  const noTrip = on => {
+    let o = $('no-trip'); if (!on) { if (o) o.remove(); return; } if (o) return;
+    document.body.insertAdjacentHTML('beforeend', '<div id="no-trip" style="position:fixed;inset:0;z-index:99999;background:#F8F8F6;display:flex;align-items:center;justify-content:center;text-align:center;padding:30px;color:#4A423D;line-height:1.9"><div><div style="font-size:3rem">🧭</div><b>找不到旅程</b><br>請使用含旅程代碼的專屬網址開啟<br><small>（網址最後面要有 ?trip=…）</small></div></div>');
+  };
   window.__pushVote = (pid, o) => ready.then(() => ref.child('votes/' + me + '/' + pid).set(clean(o))).catch(() => toast('❌ 評分未同步', 1));
 
   const _sd = saveData;
   let lastExp = {};   // 上次與雲端同步時，每筆帳目的內容（只寫入有變動的帳目，避免互相覆蓋）
   saveData = function () {
+    if ($('no-trip')) return;   // 找不到旅程時不寫入，避免又建出 default
     localStorage.setItem('trip_data_public', JSON.stringify(data));
     const d = clean(data), upd = {}, cur = {};
     (d.expenses || []).forEach(e => { cur[e.id] = JSON.stringify(e); if (lastExp[e.id] !== cur[e.id]) upd['exp/' + e.id] = e; });
@@ -392,11 +416,11 @@
       ref.on('value', async snap => {
         let v = snap.val();
         if (!v || !v.days) {
-          if (trip === 'default') { try { const r = await fetch(API_URL); const old = await r.json(); v = old && old.days ? old : data; } catch (e) { v = data; } }
-          else v = blank();
+          if (trip === 'default') { noTrip(true); return; }   // 沒有指定旅程：不自動建立 default，改顯示提示
+          v = blank();
           ref.set(clean(norm(v))); return;
         }
-        votes = v.votes || {}; delete v.votes; DONE = v.done || {}; delete v.done; MASC = v.mascot || null; delete v.mascot;
+        noTrip(false); votes = v.votes || {}; delete v.votes; DONE = v.done || {}; delete v.done; MASC = v.mascot || null; delete v.mascot;
         try { localStorage.setItem('done_' + trip, JSON.stringify(DONE)); localStorage.setItem('votes_' + trip, JSON.stringify(votes)); } catch (e) { }
         const ex = v.exp ? Object.values(v.exp) : [], old = v.expenses ? Object.values(v.expenses).filter(Boolean) : [], migrate = !ex.length && old.length;   // 舊格式（整包陣列）自動搬成單筆儲存
         delete v.exp; v.expenses = ex.length ? ex : old;
