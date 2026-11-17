@@ -261,6 +261,9 @@ details.info-card .bag{display:block;justify-content:flex-start}
 
 /* ---- 調整：須知標題靠左、已完成行程只顯示標題、頂部收起列 ---- */
 .info-card summary>span:first-child{flex:1;min-width:0;text-align:left}
-.ev-done .evt-img,.ev-done .event-loc-row,.ev-done .event-note-box,.ev-done .flight-visual,.ev-done .transport-visual,.ev-done .card-actions-bar{display:none!important}
+.ev-done .evt-img,.ev-done .event-loc-row,.ev-done .event-note-box,.ev-done .flight-visual,.ev-done .transport-visual{display:none!important}
+/* 已完成：地圖連結隱藏；編輯／刪除只在管理員模式顯示，一般模式整列收掉不占空間 */
+.ev-done .card-actions-bar .action-link:not(.admin-only){display:none!important}
+body:not(.admin-mode) .ev-done .card-actions-bar{display:none!important}
 .ev-done .event-title-large{margin-bottom:0;padding-right:38px}
 .fold-bar.fold-top{margin-top:0}
