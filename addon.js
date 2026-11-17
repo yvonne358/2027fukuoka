@@ -1,6 +1,22 @@
 /* 旅遊小幫手 附加功能（完整版）：倒數貼紙、照片、今日路線、Firebase 同步、須知頁、評分頁 */
 (function () {
   { const q = (document.currentScript && document.currentScript.src.split('?')[1]) || Date.now(); if (!document.getElementById('addon-css')) { const l = document.createElement('link'); l.id = 'addon-css'; l.rel = 'stylesheet'; l.href = 'addon.css?' + q; document.head.appendChild(l); } }
+  // ---------- 離線使用（Service Worker：sw.js）----------
+  if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+    const warm = () => navigator.serviceWorker.ready.then(reg => {
+      if (!reg.active) return;
+      const L = performance.getEntriesByType('resource').map(e => [e.name, e.initiatorType === 'img']), add = u => { try { if (u) L.push([new URL(u, location.href).href, true]); } catch (x) { } };
+      try {
+        (data.days || []).forEach(d => (d.events || []).forEach(e => add(e.image)));
+        ((data.info || {}).hotels || []).forEach(h => add(h.img));
+        ((data.rating || {}).items || []).forEach(i => (i.players || []).forEach(p => add(p.img)));
+      } catch (x) { }
+      reg.active.postMessage({ type: 'warm', list: L });
+    }).catch(() => { });
+    window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').then(() => { setTimeout(warm, 5000); setTimeout(warm, 20000); }).catch(() => { }); });
+    window.addEventListener('online', () => setTimeout(warm, 2000));
+    window.addEventListener('offline', () => { try { toast('📴 目前離線，顯示上次載入的內容'); } catch (x) { } });
+  }
   const FIREBASE_CONFIG = { apiKey: "AIzaSyAwVNxRT6VMje1ZutvaOx-oL36MsaF8f1w", authDomain: "travel-plan-46bc4.firebaseapp.com", databaseURL: "https://travel-plan-46bc4-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "travel-plan-46bc4", appId: "1:995767265783:web:a12f909fda79f5d4d766f2" };
 
   const $ = id => document.getElementById(id);
@@ -19,6 +35,7 @@
   setInterval(() => { if (AUTO_LOCK_MIN && typeof isAdminMode !== 'undefined' && isAdminMode && Date.now() - lastAct > AUTO_LOCK_MIN * 60000) toggleAdminMode(); }, 20000);
   const me = localStorage.voter_id || (localStorage.voter_id = 'v' + Math.random().toString(36).slice(2, 10));
   let votes = {}, rateSel = 0, openD = {}, DONE = {}, MASC = null;
+  try { DONE = JSON.parse(localStorage.getItem('done_' + trip) || '{}') || {}; votes = JSON.parse(localStorage.getItem('votes_' + trip) || '{}') || {}; } catch (e) { }   // 離線時也記得完成進度與評分
   const I = () => data.info = Object.assign({ flights: [], hotels: [], notes: [] }, data.info || {});
   const R = () => data.rating = Object.assign({ items: [] }, data.rating || {});
   const commit = () => { saveData(); renderInfo(); renderRate(); };
@@ -309,7 +326,7 @@
   // ---------- 評分頁 ----------
   const av = pid => { const a = Object.values(votes).map(v => v && v[pid] && v[pid].t).filter(x => x !== '' && x != null && !isNaN(x)).map(Number); return a.length ? { m: a.reduce((s, x) => s + x, 0) / a.length, n: a.length } : null; };
   const so = cur => '<option value="">未評分</option>' + Array.from({ length: 11 }, (_, i) => `<option value="${i}" ${String(cur) === String(i) ? 'selected' : ''}>${i} 分</option>`).join('');
-  function saveVote(pid, o) { (votes[me] = votes[me] || {})[pid] = o; if (window.__pushVote) window.__pushVote(pid, o); }
+  function saveVote(pid, o) { (votes[me] = votes[me] || {})[pid] = o; try { localStorage.setItem('votes_' + trip, JSON.stringify(votes)); } catch (e) { } if (window.__pushVote) window.__pushVote(pid, o); }
   window.vote = (pid, v) => { const o = (votes[me] || {})[pid] || {}; o.t = v; saveVote(pid, o); renderRate(); };
   window.voteC = (pid, j, v) => { const o = (votes[me] || {})[pid] || {}; o.c = o.c || {}; o.c[j] = v; saveVote(pid, o); };
   window.rateOpen = (id, o) => { openD[id] = o; };
@@ -380,6 +397,7 @@
           ref.set(clean(norm(v))); return;
         }
         votes = v.votes || {}; delete v.votes; DONE = v.done || {}; delete v.done; MASC = v.mascot || null; delete v.mascot;
+        try { localStorage.setItem('done_' + trip, JSON.stringify(DONE)); localStorage.setItem('votes_' + trip, JSON.stringify(votes)); } catch (e) { }
         const ex = v.exp ? Object.values(v.exp) : [], old = v.expenses ? Object.values(v.expenses).filter(Boolean) : [], migrate = !ex.length && old.length;   // 舊格式（整包陣列）自動搬成單筆儲存
         delete v.exp; v.expenses = ex.length ? ex : old;
         data = norm(v); localStorage.setItem('trip_data_public', JSON.stringify(data));
@@ -692,6 +710,7 @@
     if (on) { DONE[key] = Date.now(); foldOpen[d.date] = false; } else delete DONE[key];   // 完成後自動收起已完成區
     const to = first(), m = from !== to ? { d: d.date, dir: to > from ? 'f' : 'b', from, to, t: Date.now() } : null;
     ready.then(() => { ref.child('done/' + key).set(on ? Date.now() : null); if (m) ref.child('mascot').set(m); }).catch(() => toast('❌ 同步失敗', 1));
+    try { localStorage.setItem('done_' + trip, JSON.stringify(DONE)); } catch (e) { }
     if (m) MASC = m; renderItinerary();
   };
   const _ri3 = renderItinerary; renderItinerary = function () { _ri3(); renderTit(); };
