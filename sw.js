@@ -1,5 +1,5 @@
 /* 旅遊小幫手 離線快取（放在 index.html 同一個資料夾） */
-const V = 'trip-cache-v1';
+const V = 'trip-cache-v3';
 const CORE = ['index.html', 'addon.js', 'addon.css', 'manifest.json', 'app-icon.png'];
 const CDN = [
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
@@ -26,15 +26,14 @@ self.addEventListener('activate', e => {
   e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== V).map(k => caches.delete(k)))).then(() => self.clients.claim()));
 });
 
-// 網路優先（4 秒沒回應就先用快取）：自己的網頁程式，有更新時能馬上拿到新版
-const netFirst = (r, key) => new Promise(res => {
-  let done = false; const fin = x => { if (!done && x) { done = true; res(x); } };
-  const t = setTimeout(() => caches.match(key).then(fin), 4000);
-  fetch(r).then(x => { clearTimeout(t); if (x && x.ok) put(key, x.clone()); if (!done) { done = true; res(x); } })
-    .catch(() => { clearTimeout(t); caches.match(key).then(m => { if (!done) { done = true; res(m || Response.error()); } }); });
+// 每次都向伺服器確認有沒有新版（不吃瀏覽器自己的 10 分鐘快取）
+const fresh = r => r.mode === 'navigate' ? new Request(r.url, { cache: 'no-cache' }) : new Request(r, { cache: 'no-cache' });
+// 先顯示快取（打開馬上有畫面），同時在背景檢查新版，新版下次打開就會生效；第一次還沒有快取時才等網路
+const swr = (e, r, key) => caches.match(key).then(m => {
+  const f = fetch(fresh(r)).then(x => { if (x && x.ok) put(key, x.clone()); return x; }).catch(() => m);
+  e.waitUntil(f.catch(() => { }));
+  return m || f;
 });
-// 圖片：先顯示快取，背景再更新
-const swr = (r, key) => caches.match(key).then(m => { const f = fetch(r).then(x => { put(key, x.clone()); return x; }).catch(() => m); return m || f; });
 // 外部函式庫、字型：版本固定，有快取就直接用
 const cf = (r, key) => caches.match(key).then(m => m || fetch(r).then(x => { put(key, x.clone()); return x; }));
 
@@ -42,10 +41,9 @@ self.addEventListener('fetch', e => {
   const r = e.request; if (r.method !== 'GET') return;
   const same = new URL(r.url).origin === location.origin, img = r.destination === 'image';
   if (!cacheable(r.url, img)) return;   // 同步資料庫、天氣、匯率等一律走網路，不碰
-  if (r.mode === 'navigate') return e.respondWith(netFirst(r, INDEX));
+  if (r.mode === 'navigate') return e.respondWith(swr(e, r, INDEX));
   const key = same ? keyOf(r.url) : r.url;
-  if (img) return e.respondWith(swr(r, key));
-  if (same) return e.respondWith(netFirst(r, key));
+  if (img || same) return e.respondWith(swr(e, r, key));
   e.respondWith(cf(r, key));
 });
 
