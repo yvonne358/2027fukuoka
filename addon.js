@@ -34,7 +34,7 @@
   // 旅程代碼只需要寫「前半段」：網址的代碼是『前半段-後半段』時，這裡寫前半段（例如 fukuoka2027）就會對應到，後半段不用（也不要）寫進來
   // 格式：'前半段': { name: '主畫面顯示的名稱', icon: '主畫面圖示.png', bg: '內頁背景圖.jpg' }，三項都可以只寫需要的；沒列在這裡的旅程用預設值
   const TRIP_APP = {
-    // 'fukuoka2027': { name: '福岡之旅', icon: 'app-icon.png', bg: 'header-bg.jpg' },
+    // 'fukuoka2027': { name: '福岡之旅', icon: 'icon-fukuoka.png', bg: 'bg-fukuoka.jpg' },
   };
   const tripCfg = () => { let best = null; for (const k in TRIP_APP) if ((trip === k || trip.startsWith(k + '-')) && (best === null || k.length > best.length)) best = k; return TRIP_APP[best] || {}; };   // 取最長的相符前半段
   { const c = tripCfg(); if (c && c.bg) document.documentElement.style.setProperty('--hero-img', "url('" + new URL(c.bg, location.href).href + "')"); }   // 這個旅程的內頁背景圖
@@ -430,8 +430,8 @@
           v = blank();
           ref.set(clean(norm(v))); return;
         }
-        noTrip(false); votes = v.votes || {}; delete v.votes; DONE = v.done || {}; delete v.done; MASC = v.mascot || null; delete v.mascot; SV = v.shopv || {}; delete v.shopv;
-        try { localStorage.setItem('done_' + trip, JSON.stringify(DONE)); localStorage.setItem('votes_' + trip, JSON.stringify(votes)); localStorage.setItem('shopv_' + trip, JSON.stringify(SV)); } catch (e) { }
+        noTrip(false); votes = v.votes || {}; delete v.votes; DONE = v.done || {}; delete v.done; MASC = v.mascot || null; delete v.mascot; SV = v.shopv || {}; delete v.shopv; SWT = v.shopw || {}; delete v.shopw;
+        try { localStorage.setItem('done_' + trip, JSON.stringify(DONE)); localStorage.setItem('votes_' + trip, JSON.stringify(votes)); localStorage.setItem('shopv_' + trip, JSON.stringify(SV)); localStorage.setItem('shopw_' + trip, JSON.stringify(SWT)); } catch (e) { }
         const ex = v.exp ? Object.values(v.exp) : [], old = v.expenses ? Object.values(v.expenses).filter(Boolean) : [], migrate = !ex.length && old.length;   // 舊格式（整包陣列）自動搬成單筆儲存
         delete v.exp; v.expenses = ex.length ? ex : old;
         data = norm(v); localStorage.setItem('trip_data_public', JSON.stringify(data));
@@ -773,12 +773,16 @@
   const shopNavEl = nv('shop', 'fa-bag-shopping', '購物');
   nav.insertBefore(shopNavEl, nav.children[2]);   // 須知 ‧ 購物 ‧ 行程
   shopNavEl.addEventListener('click', () => renderShop());   // 進入購物頁時刷新（匯率更新後金額換算也會跟著更新）
-  const S = () => data.shop = Object.assign({ stores: [] }, data.shop || {}, { stores: ((data.shop || {}).stores || []) });
+  const SHOP_CATS = [{ id: 'snack', name: '零食', icon: '🍪' }, { id: 'drink', name: '飲料', icon: '🥤' }, { id: 'beauty', name: '藥妝', icon: '💊' }];
+  const SHOP_TAGS = [{ id: 'cold', name: '冷藏' }, { id: 'room', name: '常溫' }, { id: 'frozen', name: '冷凍' }, { id: 'preorder', name: '可預訂' }, { id: 'limited', name: '限定' }];
+  const S = () => { const d = data.shop = Object.assign({ stores: [] }, data.shop || {}); d.stores = d.stores || []; if (!d.cats || !d.cats.length) d.cats = SHOP_CATS.map(c => Object.assign({}, c)); if (!d.tags || !d.tags.length) d.tags = SHOP_TAGS.map(c => Object.assign({}, c)); return d; };
   let SV = {}; try { SV = JSON.parse(localStorage.getItem('shopv_' + trip) || '{}') || {}; } catch (e) { }   // SV[誰][商品id] = 'r' 推薦 / 'o' 普通 / 'n' 不推
-  const shopOpenSt = {}; let shopHotOnly = false;
+  let SWT = {}; try { SWT = JSON.parse(localStorage.getItem('shopw_' + trip) || '{}') || {}; } catch (e) { }   // 想買：SWT[誰][商品id] = 1
+  const shopWantN = iid => Object.values(SWT).filter(v => v && v[iid]).length;
+  const shopOpenSt = {}, shopCatSel = {}; let shopHotOnly = false;   // shopCatSel：每間店目前選的分類標籤（只存在這支手機）
   const shopCommit = () => { saveData(); renderShop(); };
   const shopTally = iid => { const t = { r: 0, o: 0, n: 0 }; Object.values(SV).forEach(v => { const x = v && v[iid]; if (x in t) t[x]++; }); return t; };
-  const shopTh = () => { const st = data.settings || {}; return { hot: Math.max(1, parseInt(st.shopHot) || 3), bad: Math.max(1, parseInt(st.shopBad) || 2) }; };
+  const shopTh = () => { const st = data.settings || {}; return { hot: Math.max(1, parseInt(st.shopHot) || 3), bad: Math.max(1, parseInt(st.shopBad) || 2), want: Math.max(1, parseInt(st.shopWant) || 3) }; };
   const shopStatus = t => { const th = shopTh(), h = t.r >= th.hot, b = t.n >= th.bad; if (h && b) return t.r > t.n ? 'hot' : t.n > t.r ? 'bad' : 'mix'; return h ? 'hot' : b ? 'bad' : ''; };
   const shopCompress = f => new Promise((res, rej) => { const img = new Image(), u = URL.createObjectURL(f); img.onload = () => { const k = Math.min(1, 900 / Math.max(img.width, img.height)), c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(u); res(c.toDataURL('image/jpeg', .65)); }; img.onerror = rej; img.src = u; });
   // 商品照片放在 photos/<旅程>/shop_<商品id>/p，打開店家才載入，載入過的存在手機裡（離線也看得到）
@@ -805,12 +809,36 @@
     ready.then(() => { const r0 = ref.child('shopv/' + me + '/' + iid); return nv ? r0.set(nv) : r0.remove(); }).catch(() => toast('❌ 投票未同步', 1));
     renderShop();
   };
+  window.shopWantTog = iid => {
+    SWT[me] = SWT[me] || {}; const on = !SWT[me][iid];
+    if (on) SWT[me][iid] = 1; else delete SWT[me][iid];
+    try { localStorage.setItem('shopw_' + trip, JSON.stringify(SWT)); } catch (e) { }
+    ready.then(() => { const r0 = ref.child('shopw/' + me + '/' + iid); return on ? r0.set(1) : r0.remove(); }).catch(() => toast('❌ 想買未同步', 1));
+    renderShop();
+  };
   window.shopMove = (k, sid, iid, d) => {
     const L = S().stores; let A = L, id = sid;
     if (k === 'i') { const st = L.find(x => x.id === sid); if (!st) return; A = st.items = st.items || []; id = iid; }
     const i = A.findIndex(x => x.id === id), j = i + d; if (i < 0 || j < 0 || j >= A.length) return;
     [A[i], A[j]] = [A[j], A[i]]; shopCommit();
   };
+  window.shopCatPick = (sid, cid) => { shopCatSel[sid] = cid; shopOpenSt[sid] = true; renderShop(); };
+  const SHOP_L = { cats: { label: '分類', ph: '分類名稱（如：零食）' }, tags: { label: '標籤', ph: '標籤名稱（如：冷藏）' } };
+  window.shopLEdit = (k, id) => {
+    const L = S()[k], n = !id, c = n ? {} : L.find(x => x.id === id), m = SHOP_L[k]; if (!n && !c) return;
+    form((n ? '新增' : '編輯') + m.label, [['name', m.ph], ['icon', '圖示 emoji（選填）']], c, o => {
+      if (!o.name) return;
+      if (n) L.push({ id: uid(), name: o.name, icon: o.icon }); else Object.assign(c, o);
+      shopCommit();
+    }, n ? null : () => {
+      if (L.length <= 1) { alert('至少要保留一個' + m.label); return; }
+      S().stores.forEach(st => (st.items || []).forEach(it => {
+        if (k === 'cats') { if (it.cat === id) delete it.cat; } else if (it.tags) { it.tags = it.tags.filter(t => t !== id); if (!it.tags.length) delete it.tags; }
+      }));
+      L.splice(L.indexOf(c), 1); shopCommit();
+    });
+  };
+  window.shopLMove = (k, id, d) => { const L = S()[k], i = L.findIndex(x => x.id === id), j = i + d; if (i < 0 || j < 0 || j >= L.length) return; [L[i], L[j]] = [L[j], L[i]]; shopCommit(); };
   window.shopStoreEdit = sid => {
     const L = S().stores, n = !sid, st = n ? {} : L.find(x => x.id === sid); if (!n && !st) return;
     form(n ? '新增店家／地點' : '編輯店家／地點', [['name', '店家／地點名稱（如：7-11、唐吉訶德天神店）'], ['icon', '圖示 emoji（選填，如 🏪）']], st, o => {
@@ -823,11 +851,11 @@
   window.shopItemEdit = (sid, iid) => {
     const st = S().stores.find(x => x.id === sid); if (!st) return; st.items = st.items || [];
     const it = iid ? st.items.find(x => x.id === iid) : null; if (iid && !it) return;
-    SF = { data: null, rm: false };
+    SF = { data: null, rm: false, tags: new Set((it && it.tags) || []) };
     let m = $('shop-modal'); if (!m) { m = document.createElement('div'); m.id = 'shop-modal'; m.className = 'modal'; document.body.appendChild(m); }
-    m.innerHTML = `<div class="modal-content"><h3 style="margin-top:0">${it ? '編輯商品' : '新增商品'}　<small class="muted">${esc(st.name)}</small></h3><label>商品名稱（外文也可以）</label><input id="sf-name" type="text"><label>價格（選填）</label><div style="display:flex;gap:6px"><input id="sf-price" type="number" inputmode="decimal" min="0" step="any" placeholder="例如 160" style="flex:2;margin:0"><select id="sf-cur" style="flex:1;margin:0"><option>TWD</option><option>JPY</option><option>KRW</option></select><select id="sf-tax" style="flex:1.3;margin:0"><option value="">不標示</option><option value="in">含稅</option><option value="ex">未稅</option></select></div><label>說明（為什麼推薦、口味…）</label>${mdBar('sf-note')}<textarea id="sf-note" rows="4"></textarea><label>照片（選填，可拍照或從相簿選）</label><div id="sf-prev"></div><input id="sf-file" type="file" accept="image/*"><label>或貼上圖片網址（選填）</label><input id="sf-img" type="text"><button class="btn" id="sf-ok">儲存</button>${it ? '<button class="btn btn-danger" id="sf-del">刪除</button>' : ''}<button class="btn btn-outline" id="sf-x" style="margin-top:5px">取消</button></div>`;
+    m.innerHTML = `<div class="modal-content"><h3 style="margin-top:0">${it ? '編輯商品' : '新增商品'}　<small class="muted">${esc(st.name)}</small></h3><label>商品名稱（外文也可以）</label><input id="sf-name" type="text"><label>分類（選填）</label><select id="sf-cat"><option value="">（無分類）</option>${S().cats.map(c => `<option value="${c.id}">${esc(c.icon ? c.icon + ' ' : '')}${esc(c.name)}</option>`).join('')}</select><label>標籤（可複選，點一下選取）</label><div id="sf-tags" class="shop-cats"></div><label>價格（選填）</label><div style="display:flex;gap:6px"><input id="sf-price" type="number" inputmode="decimal" min="0" step="any" placeholder="例如 160" style="flex:2;margin:0"><select id="sf-cur" style="flex:1;margin:0"><option>TWD</option><option>JPY</option><option>KRW</option></select><select id="sf-tax" style="flex:1.3;margin:0"><option value="">不標示</option><option value="in">含稅</option><option value="ex">未稅</option></select></div><label>說明（為什麼推薦、口味…）</label>${mdBar('sf-note')}<textarea id="sf-note" rows="4"></textarea><label>照片（選填，可拍照或從相簿選）</label><div id="sf-prev"></div><input id="sf-file" type="file" accept="image/*"><label>或貼上圖片網址（選填）</label><input id="sf-img" type="text"><button class="btn" id="sf-ok">儲存</button>${it ? '<button class="btn btn-danger" id="sf-del">刪除</button>' : ''}<button class="btn btn-outline" id="sf-x" style="margin-top:5px">取消</button></div>`;
     $('sf-name').value = it ? it.name || '' : ''; $('sf-note').value = it ? it.note || '' : ''; $('sf-img').value = it ? it.img || '' : '';
-    $('sf-price').value = it && it.price != null ? it.price : ''; $('sf-tax').value = it ? it.tax || '' : '';
+    $('sf-cat').value = it ? it.cat || '' : ''; $('sf-price').value = it && it.price != null ? it.price : ''; $('sf-tax').value = it ? it.tax || '' : '';
     $('sf-cur').value = (it && it.cur) || localStorage.getItem('shop_cur') || (data.settings || {}).defaultCurrency || 'JPY';
     const prev = () => {
       const p = $('sf-prev'), has = SF.data || (it && it.ph && !SF.rm);
@@ -835,6 +863,8 @@
       if (has && !SF.data) shopPh(p.querySelector('img'));
       if (has) $('sf-rm').onclick = () => { SF.data = null; SF.rm = true; prev(); };
     };
+    const drawTags = () => { $('sf-tags').innerHTML = S().tags.map(t => `<span class="shop-chip sm ${SF.tags.has(t.id) ? 'on' : ''}" data-t="${t.id}">${esc(t.icon ? t.icon + ' ' : '')}${esc(t.name)}</span>`).join(''); };
+    drawTags(); $('sf-tags').onclick = e => { const id = e.target.dataset.t; if (!id) return; if (SF.tags.has(id)) SF.tags.delete(id); else SF.tags.add(id); drawTags(); };
     prev();
     $('sf-file').onchange = async e => { const f = e.target.files[0]; if (!f) return; try { SF.data = await shopCompress(f); SF.rm = false; prev(); } catch (x) { toast('❌ 圖片讀取失敗', 1); } };
     const close = () => { m.style.display = 'none'; };
@@ -844,6 +874,8 @@
       const name = $('sf-name').value.trim(); if (!name) { alert('請輸入商品名稱'); return; }
       const x = it || { id: uid() }; if (!it) st.items.push(x);
       x.name = name;
+      if ($('sf-cat').value) x.cat = $('sf-cat').value; else delete x.cat;
+      const tg = S().tags.filter(t => SF.tags.has(t.id)).map(t => t.id); if (tg.length) x.tags = tg; else delete x.tags;
       const pv = $('sf-price').value;
       if (pv !== '' && isFinite(+pv)) { x.price = +pv; x.cur = $('sf-cur').value; try { localStorage.setItem('shop_cur', x.cur); } catch (e) { } if ($('sf-tax').value) x.tax = $('sf-tax').value; else delete x.tax; } else { delete x.price; delete x.cur; delete x.tax; }
       const note = $('sf-note').value.trim(), img = $('sf-img').value.trim();
@@ -863,6 +895,12 @@
     const twd = c !== 'TWD' ? `<span class="shop-twd">≈ NT$${Math.round(num * r).toLocaleString('en-US')}</span>` : '';
     return `<div class="shop-price"><b>${CURSYM[c] || c + ' '}${fmt(num)}</b>${tax}${twd}</div>`;
   }
+  function shopTagsHtml(it) { const L = (it.tags || []).map(id => S().tags.find(t => t.id === id)).filter(Boolean); return L.length ? `<div class="shop-tgs">${L.map(t => `<span class="shop-tg">${esc(t.icon ? t.icon + ' ' : '')}${esc(t.name)}</span>`).join('')}</div>` : ''; }
+  function shopMeta(it) {
+    const c = S().cats.find(x => x.id === it.cat), p = shopPrice(it); if (!c) return p;
+    const tag = `<span class="shop-cat">${esc(c.icon ? c.icon + ' ' : '')}${esc(c.name)}</span>`;
+    return p ? p.replace('<div class="shop-price">', '<div class="shop-price">' + tag) : `<div class="shop-price">${tag}</div>`;
+  }
   window.shopLinkHtml = sid => {
     const st = ((data.shop || {}).stores || []).find(x => x.id === sid); if (!st) return '';
     const n = (st.items || []).filter(it => shopStatus(shopTally(it.id)) === 'hot').length;
@@ -874,22 +912,29 @@
   };
   function shopItemHtml(st, o) {
     const it = o.it, t = o.t, s = o.s, my = (SV[me] || {})[it.id];
-    const tag = s === 'hot' ? '<span class="shop-tag hot">🔥 激推</span>' : s === 'bad' ? '<span class="shop-tag bad">💣 地雷</span>' : s === 'mix' ? '<span class="shop-tag mix">⚖️ 兩極</span>' : '';
+    const myW = (SWT[me] || {})[it.id];
+    const tag = (s === 'hot' ? '<span class="shop-tag hot">🔥 激推</span>' : s === 'bad' ? '<span class="shop-tag bad">💣 地雷</span>' : s === 'mix' ? '<span class="shop-tag mix">⚖️ 兩極</span>' : '') + (o.wh ? '<span class="shop-tag want">🛒 熱門想買</span>' : '');
     const pic = it.ph ? `<img class="shop-ph" data-sid="${it.id}" data-pv="${it.pv || 0}" alt="" onclick="this.src&&viewImg(this.src)">` : it.img ? `<img class="shop-ph" src="${esc(it.img)}" alt="" loading="lazy" onclick="viewImg(this.src)" onerror="this.remove()">` : '';
-    return `<div class="shop-item ${s}"><div class="shop-row">${pic}<div class="shop-main"><div class="shop-nm">${tag}${esc(it.name)}</div>${shopPrice(it)}${it.note ? `<div class="shop-note">${md(it.note)}</div>` : ''}</div></div><div class="shop-vote">${[['r', '👍', '推薦'], ['o', '😐', '普通'], ['n', '👎', '不推']].map(([k, e, l]) => `<button type="button" class="${k} ${my === k ? 'on' : ''}" onclick="shopVote('${it.id}','${k}')">${e} ${l} ${t[k]}</button>`).join('')}</div><div class="ed admin-only"><span onclick="shopItemEdit('${st.id}','${it.id}')">✏️ 編輯</span><span onclick="shopMove('i','${st.id}','${it.id}',-1)">▲ 上移</span><span onclick="shopMove('i','${st.id}','${it.id}',1)">▼ 下移</span></div></div>`;
+    return `<div class="shop-item ${s} ${o.wh ? 'want' : ''}"><div class="shop-row">${pic}<div class="shop-main"><div class="shop-nm">${tag}${esc(it.name)}</div>${shopMeta(it)}${shopTagsHtml(it)}</div></div>${it.note ? `<div class="shop-note">${md(it.note)}</div>` : ''}<div class="shop-vote">${[['r', '👍', '推薦'], ['o', '😐', '普通'], ['n', '👎', '不推']].map(([k, e, l]) => `<button type="button" class="${k} ${my === k ? 'on' : ''}" onclick="shopVote('${it.id}','${k}')">${e} ${l} ${t[k]}</button>`).join('')}<button type="button" class="w ${myW ? 'on' : ''}" onclick="shopWantTog('${it.id}')">🛒 想買 ${o.w}</button></div><div class="ed admin-only"><span onclick="shopItemEdit('${st.id}','${it.id}')">✏️ 編輯</span><span onclick="shopMove('i','${st.id}','${it.id}',-1)">▲ 上移</span><span onclick="shopMove('i','${st.id}','${it.id}',1)">▼ 下移</span></div></div>`;
   }
   function renderShop() {
     const bd = $('shop-body'); if (!bd) return;
-    const sts = S().stores, th = shopTh(), ord = { hot: 0, mix: 1, '': 2, bad: 3 };
-    let h = `<div class="admin-only shop-adm"><div class="info-card shop-set">⚙️ <span>🔥 激推：</span><input type="number" min="1" inputmode="numeric" value="${th.hot}" onchange="shopThSet('shopHot',this.value)"> 人推薦　<span>💣 地雷：</span><input type="number" min="1" inputmode="numeric" value="${th.bad}" onchange="shopThSet('shopBad',this.value)"> 人不推</div><button class="btn btn-outline" onclick="shopStoreEdit()">+ 新增店家／地點</button></div>`;
+    const sts = S().stores, th = shopTh(), rank = o => o.s === 'hot' ? 0 : (o.wh && o.s !== 'bad') ? 1 : o.s === 'mix' ? 2 : o.s === '' ? 3 : 4;   // 激推最前面，其次熱門想買，地雷墊底；同組內想買人數多的在前
+    const mgr = (k, lb, nm) => `<div class="shop-catmgr"><span>${lb}</span>${S()[k].map(c => `<span class="shop-chip sm">${esc(c.icon ? c.icon + ' ' : '')}${esc(c.name)} <i onclick="shopLMove('${k}','${c.id}',-1)">◀</i><i onclick="shopLMove('${k}','${c.id}',1)">▶</i><i onclick="shopLEdit('${k}','${c.id}')">✏️</i></span>`).join('')}<span class="shop-chip sm" onclick="shopLEdit('${k}')">+ ${nm}</span></div>`;
+    let h = `<div class="admin-only shop-adm"><div class="info-card shop-set">⚙️ <span>🔥 激推：</span><input type="number" min="1" inputmode="numeric" value="${th.hot}" onchange="shopThSet('shopHot',this.value)"> 人推薦　<span>💣 地雷：</span><input type="number" min="1" inputmode="numeric" value="${th.bad}" onchange="shopThSet('shopBad',this.value)"> 人不推　<span>🛒 熱門想買：</span><input type="number" min="1" inputmode="numeric" value="${th.want}" onchange="shopThSet('shopWant',this.value)"> 人想買${mgr('cats', '🗂️ 分類：', '分類')}${mgr('tags', '🔖 標籤：', '標籤')}</div><button class="btn btn-outline" onclick="shopStoreEdit()">+ 新增店家／地點</button></div>`;
     if (sts.length) h += `<div class="shop-filter"><span class="shop-chip ${shopHotOnly ? 'on' : ''}" onclick="shopFilter(${!shopHotOnly})">🔥 只看激推</span></div>`;
     else h += '<div class="muted" style="text-align:center;margin-top:40px">還沒有店家<br>（管理員可按上方 + 新增）</div>';
     sts.forEach(st => {
-      const all = (st.items || []).map((it, i) => { const t = shopTally(it.id); return { it, i, t, s: shopStatus(t) }; });
-      const shown = (shopHotOnly ? all.filter(o => o.s === 'hot') : all).sort((a, b) => ord[a.s] - ord[b.s] || a.i - b.i);
+      const all = (st.items || []).map((it, i) => { const t = shopTally(it.id); const w = shopWantN(it.id); return { it, i, t, s: shopStatus(t), w, wh: w >= th.want }; });
+      const cats = S().cats, validCat = o => cats.some(c => c.id === o.it.cat);
+      const present = cats.filter(c => all.some(o => o.it.cat === c.id)), noneN = all.filter(o => !validCat(o)).length;
+      let sel = shopCatSel[st.id] || ''; if (sel === '_none' ? !(present.length && noneN) : (sel && !present.some(c => c.id === sel))) sel = '';
+      const shown = all.filter(o => (!shopHotOnly || o.s === 'hot') && (!sel || (sel === '_none' ? !validCat(o) : o.it.cat === sel))).sort((a, b) => rank(a) - rank(b) || b.w - a.w || a.i - b.i);
+      const chip = (id, label, n) => `<span class="shop-chip sm ${sel === id ? 'on' : ''}" onclick="shopCatPick('${st.id}','${id}')">${label} ${n}</span>`;
+      const catChips = present.length ? `<div class="shop-cats">${chip('', '全部', all.length)}${present.map(c => chip(c.id, esc(c.icon ? c.icon + ' ' : '') + esc(c.name), all.filter(o => o.it.cat === c.id).length)).join('')}${noneN ? chip('_none', '未分類', noneN) : ''}</div>` : '';
       if (shopHotOnly && !shown.length) return;
       const nHot = all.filter(o => o.s === 'hot').length, open = shopHotOnly ? shopOpenSt[st.id] !== false : !!shopOpenSt[st.id];
-      h += `<details class="info-card shop-store" data-store="${st.id}" ${open ? 'open' : ''} ontoggle="shopOpen('${st.id}',this.open,this)"><summary><span>${esc(st.icon || '🏪')} ${esc(st.name)}</span><span class="shop-cnt">${nHot ? `<b class="shop-hotn">🔥${nHot}</b>　` : ''}${all.length} 項</span></summary><div class="shop-list"><div class="admin-only" style="gap:8px"><button class="btn btn-outline" onclick="shopItemEdit('${st.id}')">+ 新增商品</button></div><div class="ed admin-only"><span onclick="shopStoreEdit('${st.id}')">✏️ 編輯店家</span><span onclick="shopMove('s','${st.id}',null,-1)">▲ 上移</span><span onclick="shopMove('s','${st.id}',null,1)">▼ 下移</span></div>${shown.map(o => shopItemHtml(st, o)).join('') || '<div class="muted" style="text-align:center;padding:10px">這間店還沒有推薦商品</div>'}</div></details>`;
+      h += `<details class="info-card shop-store" data-store="${st.id}" ${open ? 'open' : ''} ontoggle="shopOpen('${st.id}',this.open,this)"><summary><span>${esc(st.icon || '🏪')} ${esc(st.name)}</span><span class="shop-cnt">${nHot ? `<b class="shop-hotn">🔥${nHot}</b>　` : ''}${all.length} 項</span></summary><div class="shop-list"><div class="admin-only" style="gap:8px"><button class="btn btn-outline" onclick="shopItemEdit('${st.id}')">+ 新增商品</button></div><div class="ed admin-only"><span onclick="shopStoreEdit('${st.id}')">✏️ 編輯店家</span><span onclick="shopMove('s','${st.id}',null,-1)">▲ 上移</span><span onclick="shopMove('s','${st.id}',null,1)">▼ 下移</span></div>${catChips}${shown.map(o => shopItemHtml(st, o)).join('') || '<div class="muted" style="text-align:center;padding:10px">這間店還沒有推薦商品</div>'}</div></details>`;
     });
     bd.innerHTML = h;
     bd.querySelectorAll('details[open] img[data-sid]').forEach(shopPh);
