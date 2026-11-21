@@ -327,3 +327,6 @@ details.shop-store{padding:0!important;overflow:hidden}
 .shop-vote button.w{flex:1.05;border-style:dashed}
 .shop-vote button.on.w{background:#DDF1E9;border-color:#5FA58E;border-style:solid;font-weight:700}
 .shop-item.bad,.shop-item.bad.want{border-color:#C9C2D3;background:#F4F2F6}   /* 地雷的樣式優先於熱門想買 */
+.shop-nm .shop-cat{font-size:.68rem;font-weight:500;padding:1px 8px;margin-left:6px;vertical-align:middle;white-space:nowrap}
+.shop-sw{display:inline-block;width:30px;height:30px;line-height:30px;text-align:center;border-radius:50%;margin:0 6px 6px 0;font-size:.85rem;font-weight:700;border:2px solid transparent;cursor:pointer}
+.shop-sw.on{border-color:#4A423D}
