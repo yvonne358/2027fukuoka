@@ -270,3 +270,34 @@ body:not(.admin-mode) .ev-done .card-actions-bar{display:none!important}
 
 /* 各旅程的內頁背景圖：沒設定時用原本的 header-bg.jpg */
 .hero-header.hero-header{background-image:linear-gradient(to bottom,rgba(248,248,246,.2) 0%,rgba(248,248,246,.6) 70%,rgba(248,248,246,1) 100%),var(--hero-img,url('header-bg.jpg'))}
+
+/* ---- 購物推薦頁 ---- */
+.shop-set{display:block;font-size:.85rem;line-height:2.2}
+.shop-set input{width:56px;margin:0 4px;padding:5px;text-align:center;display:inline-block}
+.shop-filter{margin:0 0 12px}
+.shop-chip{display:inline-block;padding:6px 14px;border-radius:999px;border:1.5px solid var(--line);background:#fff;font-size:.85rem;cursor:pointer;color:var(--ink)}
+.shop-chip.on{background:#FDE4D8;border-color:#F0A07C;font-weight:700}
+details.shop-store{padding:0!important;overflow:hidden}
+.shop-store>summary{padding:14px;font-weight:700;font-size:1.05rem}
+.shop-store[open]>summary{background:#FBF6F1;border-bottom:1px dashed var(--line)}
+.shop-cnt{font-size:.78rem;color:#999;font-weight:400;white-space:nowrap}
+.shop-hotn{color:#E4572E}
+.shop-list{padding:10px 12px 4px}
+.shop-item{border:1.5px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px;background:#fff}
+.shop-item.hot{border-color:#F0A07C;background:linear-gradient(#FFF4EC,#fff);box-shadow:0 0 0 3px rgba(240,160,124,.22)}
+.shop-item.bad{border-color:#C9C2D3;background:#F4F2F6}
+.shop-item.bad .shop-nm{color:#8a8196}
+.shop-nm{font-weight:700;font-size:1rem;line-height:1.5}
+.shop-tag{display:inline-block;padding:1px 9px;border-radius:999px;font-size:.72rem;font-weight:700;margin-right:6px;vertical-align:middle;color:#fff}
+.shop-tag.hot{background:linear-gradient(135deg,#F2784B,#E4572E)}
+.shop-tag.bad{background:#7D6F8E}
+.shop-tag.mix{background:#8C7B70}
+.shop-ph{display:block;width:100%;max-height:240px;min-height:56px;object-fit:cover;border-radius:12px;margin:8px 0;background:#F1ECE6}
+.shop-note{white-space:pre-wrap;background:#FAF7F3;border-radius:10px;padding:8px 10px;font-size:.9rem;line-height:1.65;margin:6px 0 8px}
+.shop-q{font-size:.75rem;color:#aaa;margin:4px 0}
+.shop-vote{display:flex;gap:6px}
+.shop-vote button{flex:1;border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:7px 2px;font:inherit;font-size:.8rem;color:var(--ink);cursor:pointer}
+.shop-vote button.on.r{background:#FDE4D8;border-color:#F0A07C;font-weight:700}
+.shop-vote button.on.o{background:#EFEAE4;border-color:#BDB1A6;font-weight:700}
+.shop-vote button.on.n{background:#E6E1EC;border-color:#9A8DAE;font-weight:700}
+.shop-adm{flex-direction:column;align-items:stretch;gap:0}
