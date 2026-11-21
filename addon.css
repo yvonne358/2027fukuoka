@@ -292,12 +292,23 @@ details.shop-store{padding:0!important;overflow:hidden}
 .shop-tag.hot{background:linear-gradient(135deg,#F2784B,#E4572E)}
 .shop-tag.bad{background:#7D6F8E}
 .shop-tag.mix{background:#8C7B70}
-.shop-ph{display:block;width:100%;max-height:240px;min-height:56px;object-fit:cover;border-radius:12px;margin:8px 0;background:#F1ECE6}
-.shop-note{white-space:pre-wrap;background:#FAF7F3;border-radius:10px;padding:8px 10px;font-size:.9rem;line-height:1.65;margin:6px 0 8px}
-.shop-q{font-size:.75rem;color:#aaa;margin:4px 0}
-.shop-vote{display:flex;gap:6px}
+.shop-row{display:flex;gap:10px;align-items:flex-start}   /* 想把縮圖放右邊：改成 flex-direction:row-reverse */
+.shop-main{flex:1;min-width:0}
+.shop-ph{flex:none;display:block;width:84px;height:84px;object-fit:cover;border-radius:10px;background:#F1ECE6;cursor:zoom-in}
+.shop-note{white-space:pre-wrap;background:#FAF7F3;border-radius:8px;padding:5px 8px;font-size:.84rem;line-height:1.55;margin:5px 0 0}
+.shop-vote{display:flex;gap:6px;margin-top:10px}
 .shop-vote button{flex:1;border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:7px 2px;font:inherit;font-size:.8rem;color:var(--ink);cursor:pointer}
 .shop-vote button.on.r{background:#FDE4D8;border-color:#F0A07C;font-weight:700}
 .shop-vote button.on.o{background:#EFEAE4;border-color:#BDB1A6;font-weight:700}
 .shop-vote button.on.n{background:#E6E1EC;border-color:#9A8DAE;font-weight:700}
 .shop-adm{flex-direction:column;align-items:stretch;gap:0}
+.shop-price{margin:2px 0;font-size:.92rem;display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px}
+.shop-price b{font-size:1.02rem;color:#8C5A3C}
+.shop-tax{font-size:.68rem;padding:1px 7px;border-radius:6px;background:#EFEAE4;color:#7a6a5e}
+.shop-tax.ex{background:#FFF0D6;color:#9A6A00}
+.shop-twd{font-size:.76rem;color:#9a9a9a}
+.shop-link{color:#C2693F!important;font-weight:700}
+.shop-store.flash{animation:shopflash 1.6s ease}
+@keyframes shopflash{0%,60%{box-shadow:0 0 0 4px rgba(240,160,124,.55)}100%{box-shadow:none}}
+.card-actions-bar .action-link{white-space:nowrap}
+.shop-filter{margin-top:12px}
