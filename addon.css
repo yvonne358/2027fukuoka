@@ -312,3 +312,18 @@ details.shop-store{padding:0!important;overflow:hidden}
 @keyframes shopflash{0%,60%{box-shadow:0 0 0 4px rgba(240,160,124,.55)}100%{box-shadow:none}}
 .card-actions-bar .action-link{white-space:nowrap}
 .shop-filter{margin-top:12px}
+.shop-chip.sm{padding:3px 10px;font-size:.78rem;margin:0 6px 6px 0}
+.shop-cats{display:flex;flex-wrap:wrap;margin:2px 0 6px}
+.shop-catmgr{margin-top:6px;line-height:2.2}
+.shop-catmgr .shop-chip i{font-style:normal;margin-left:6px;color:#8C7B70;font-size:.72rem}
+.shop-cat{font-size:.72rem;padding:1px 8px;border-radius:999px;background:#F1ECE6;color:#7a6a5e}
+.shop-note{margin:8px 0 0}
+.shop-tgs{display:flex;flex-wrap:wrap;gap:4px;margin-top:3px}
+.shop-tg{font-size:.7rem;padding:0 7px;border-radius:6px;border:1px solid #D9CFC5;color:#7a6a5e;background:#fff}
+.shop-tag.want{background:#5FA58E}
+.shop-item.want{border-color:#8CC4B2;background:linear-gradient(#F1FAF6,#fff)}
+.shop-item.hot{border-color:#F0A07C;background:linear-gradient(#FFF4EC,#fff)}
+.shop-vote button{padding:7px 0;font-size:.74rem}
+.shop-vote button.w{flex:1.05;border-style:dashed}
+.shop-vote button.on.w{background:#DDF1E9;border-color:#5FA58E;border-style:solid;font-weight:700}
+.shop-item.bad,.shop-item.bad.want{border-color:#C9C2D3;background:#F4F2F6}   /* 地雷的樣式優先於熱門想買 */
