@@ -34,7 +34,7 @@
   // 旅程代碼只需要寫「前半段」：網址的代碼是『前半段-後半段』時，這裡寫前半段（例如 fukuoka2027）就會對應到，後半段不用（也不要）寫進來
   // 格式：'前半段': { name: '主畫面顯示的名稱', icon: '主畫面圖示.png', bg: '內頁背景圖.jpg' }，三項都可以只寫需要的；沒列在這裡的旅程用預設值
   const TRIP_APP = {
-    // 'fukuoka2027': { name: '福岡之旅', icon: 'icon-fukuoka.png', bg: 'bg-fukuoka.jpg' },
+    // 'fukuoka2027': { name: '福岡之旅', icon: 'app-icon.png', bg: 'header-bg.jpg' },
   };
   const tripCfg = () => { let best = null; for (const k in TRIP_APP) if ((trip === k || trip.startsWith(k + '-')) && (best === null || k.length > best.length)) best = k; return TRIP_APP[best] || {}; };   // 取最長的相符前半段
   { const c = tripCfg(); if (c && c.bg) document.documentElement.style.setProperty('--hero-img', "url('" + new URL(c.bg, location.href).href + "')"); }   // 這個旅程的內頁背景圖
@@ -100,6 +100,7 @@
     const d = data.days[currentDayIndex]; if (!d) return;
     document.querySelectorAll('#itinerary-list .timeline-card-wrapper').forEach(w => {
       const ev = d.events[+w.dataset.idx];
+      if (ev && ev.shopId && window.shopLinkHtml) { const lk = window.shopLinkHtml(ev.shopId), bar = w.querySelector('.card-actions-bar'), f1 = bar && bar.querySelector('.action-link'); if (lk && bar) { if (f1) f1.insertAdjacentHTML('afterend', lk); else bar.insertAdjacentHTML('afterbegin', lk); } }
       if (ev && ev.image) { const im = document.createElement('img'); im.className = 'evt-img'; im.loading = 'lazy'; im.src = ev.image; im.onerror = () => im.remove(); w.querySelector('.event-title-large').after(im); }
     });
     document.querySelectorAll('#itinerary-list .event-note-box').forEach(el => { el.innerHTML = mdEm(el.innerHTML); });
@@ -115,14 +116,20 @@
     if (!$('evt-img')) $('evt-note').previousElementSibling.insertAdjacentHTML('beforebegin', '<label>照片網址（選填）</label><input type="text" id="evt-img" placeholder="例如 images/dazaifu.jpg">');
     if (!$('evt-note').previousElementSibling.classList.contains('md-bar')) $('evt-note').insertAdjacentHTML('beforebegin', mdBar('evt-note'));
     $('evt-img').value = idx == null ? '' : (data.days[currentDayIndex].events[idx].image || '');
+    const stores = (data.shop || {}).stores || []; let sw = $('evt-shop-wrap');
+    if (!sw) { $('evt-loc').insertAdjacentHTML('afterend', '<div id="evt-shop-wrap"><label>對應購物店家（選填，行程卡片會出現購物推薦連結）</label><select id="evt-shop"></select></div>'); sw = $('evt-shop-wrap'); }
+    $('evt-shop').innerHTML = '<option value="">（無）</option>' + stores.map(x => `<option value="${x.id}">${esc(x.icon || '🏪')} ${esc(x.name)}</option>`).join('');
+    $('evt-shop').value = idx == null ? '' : (data.days[currentDayIndex].events[idx].shopId || '');
+    sw.style.display = stores.length ? '' : 'none';
   };
   const _se = saveEvent;
   saveEvent = function () {
+    const sid = ['flight', 'transport'].includes($('evt-cat').value) ? '' : (($('evt-shop') || {}).value || '');
     const d = data.days[currentDayIndex], img = ($('evt-img') || {}).value || '', oi = editingEvent && editingEvent.evtIdx, oldKey = oi != null && d.events[oi] ? evKey(d, d.events[oi]) : null;
     d.events.forEach(x => Object.defineProperty(x, '_s', { value: 1, configurable: true }));
     _se();
     const n = d.events.find(x => !x._s);
-    if (n) { n.id = oldKey || n.id || uid(); if (img) n.image = img; else delete n.image; saveData(); renderItinerary(); }
+    if (n) { n.id = oldKey || n.id || uid(); if (img) n.image = img; else delete n.image; if (sid) n.shopId = sid; else delete n.shopId; saveData(); renderItinerary(); }
   };
 
   // ---------- 新增兩個頁面 + 導覽列 ----------
@@ -763,7 +770,9 @@
 
   // ---------- 購物推薦頁：依地點整理、可摺疊、商品照片、推薦／普通／不推投票 ----------
   mkPage('shop', '購物推薦', '<i class="fas fa-bag-shopping"></i> Shop Guide', '', '<div id="shop-body"></div>');
-  nav.insertBefore(nv('shop', 'fa-bag-shopping', '購物'), nav.children[2]);   // 須知 ‧ 購物 ‧ 行程
+  const shopNavEl = nv('shop', 'fa-bag-shopping', '購物');
+  nav.insertBefore(shopNavEl, nav.children[2]);   // 須知 ‧ 購物 ‧ 行程
+  shopNavEl.addEventListener('click', () => renderShop());   // 進入購物頁時刷新（匯率更新後金額換算也會跟著更新）
   const S = () => data.shop = Object.assign({ stores: [] }, data.shop || {}, { stores: ((data.shop || {}).stores || []) });
   let SV = {}; try { SV = JSON.parse(localStorage.getItem('shopv_' + trip) || '{}') || {}; } catch (e) { }   // SV[誰][商品id] = 'r' 推薦 / 'o' 普通 / 'n' 不推
   const shopOpenSt = {}; let shopHotOnly = false;
@@ -816,8 +825,10 @@
     const it = iid ? st.items.find(x => x.id === iid) : null; if (iid && !it) return;
     SF = { data: null, rm: false };
     let m = $('shop-modal'); if (!m) { m = document.createElement('div'); m.id = 'shop-modal'; m.className = 'modal'; document.body.appendChild(m); }
-    m.innerHTML = `<div class="modal-content"><h3 style="margin-top:0">${it ? '編輯商品' : '新增商品'}　<small class="muted">${esc(st.name)}</small></h3><label>商品名稱（外文也可以）</label><input id="sf-name" type="text"><label>說明（為什麼推薦、口味、價格…）</label>${mdBar('sf-note')}<textarea id="sf-note" rows="4"></textarea><label>照片（選填，可拍照或從相簿選）</label><div id="sf-prev"></div><input id="sf-file" type="file" accept="image/*"><label>或貼上圖片網址（選填）</label><input id="sf-img" type="text"><button class="btn" id="sf-ok">儲存</button>${it ? '<button class="btn btn-danger" id="sf-del">刪除</button>' : ''}<button class="btn btn-outline" id="sf-x" style="margin-top:5px">取消</button></div>`;
+    m.innerHTML = `<div class="modal-content"><h3 style="margin-top:0">${it ? '編輯商品' : '新增商品'}　<small class="muted">${esc(st.name)}</small></h3><label>商品名稱（外文也可以）</label><input id="sf-name" type="text"><label>價格（選填）</label><div style="display:flex;gap:6px"><input id="sf-price" type="number" inputmode="decimal" min="0" step="any" placeholder="例如 160" style="flex:2;margin:0"><select id="sf-cur" style="flex:1;margin:0"><option>TWD</option><option>JPY</option><option>KRW</option></select><select id="sf-tax" style="flex:1.3;margin:0"><option value="">不標示</option><option value="in">含稅</option><option value="ex">未稅</option></select></div><label>說明（為什麼推薦、口味…）</label>${mdBar('sf-note')}<textarea id="sf-note" rows="4"></textarea><label>照片（選填，可拍照或從相簿選）</label><div id="sf-prev"></div><input id="sf-file" type="file" accept="image/*"><label>或貼上圖片網址（選填）</label><input id="sf-img" type="text"><button class="btn" id="sf-ok">儲存</button>${it ? '<button class="btn btn-danger" id="sf-del">刪除</button>' : ''}<button class="btn btn-outline" id="sf-x" style="margin-top:5px">取消</button></div>`;
     $('sf-name').value = it ? it.name || '' : ''; $('sf-note').value = it ? it.note || '' : ''; $('sf-img').value = it ? it.img || '' : '';
+    $('sf-price').value = it && it.price != null ? it.price : ''; $('sf-tax').value = it ? it.tax || '' : '';
+    $('sf-cur').value = (it && it.cur) || localStorage.getItem('shop_cur') || (data.settings || {}).defaultCurrency || 'JPY';
     const prev = () => {
       const p = $('sf-prev'), has = SF.data || (it && it.ph && !SF.rm);
       p.innerHTML = has ? `<div class="mp-img"><img ${SF.data ? `src="${SF.data}"` : `data-sid="${it.id}" data-pv="${it.pv || 0}"`}><span id="sf-rm">✕</span></div>` : '';
@@ -833,6 +844,8 @@
       const name = $('sf-name').value.trim(); if (!name) { alert('請輸入商品名稱'); return; }
       const x = it || { id: uid() }; if (!it) st.items.push(x);
       x.name = name;
+      const pv = $('sf-price').value;
+      if (pv !== '' && isFinite(+pv)) { x.price = +pv; x.cur = $('sf-cur').value; try { localStorage.setItem('shop_cur', x.cur); } catch (e) { } if ($('sf-tax').value) x.tax = $('sf-tax').value; else delete x.tax; } else { delete x.price; delete x.cur; delete x.tax; }
       const note = $('sf-note').value.trim(), img = $('sf-img').value.trim();
       if (note) x.note = note; else delete x.note;
       if (img) x.img = img; else delete x.img;
@@ -842,11 +855,28 @@
     };
     m.style.display = 'flex';
   };
+  const CURSYM = { TWD: 'NT$', JPY: '¥', KRW: '₩' };
+  function shopPrice(it) {
+    if (it.price == null || it.price === '') return '';
+    const c = it.cur || 'JPY', num = Number(it.price), r = (typeof exchangeRates !== 'undefined' && exchangeRates[c]) || 1, fmt = n => n.toLocaleString('en-US', { maximumFractionDigits: 2 });
+    const tax = it.tax === 'in' ? '<span class="shop-tax">含稅</span>' : it.tax === 'ex' ? '<span class="shop-tax ex">未稅</span>' : '';
+    const twd = c !== 'TWD' ? `<span class="shop-twd">≈ NT$${Math.round(num * r).toLocaleString('en-US')}</span>` : '';
+    return `<div class="shop-price"><b>${CURSYM[c] || c + ' '}${fmt(num)}</b>${tax}${twd}</div>`;
+  }
+  window.shopLinkHtml = sid => {
+    const st = ((data.shop || {}).stores || []).find(x => x.id === sid); if (!st) return '';
+    const n = (st.items || []).filter(it => shopStatus(shopTally(it.id)) === 'hot').length;
+    return `<div class="action-link shop-link" onclick="shopGo('${sid}')"><i class="fas fa-bag-shopping"></i> 購物${n ? ' 🔥' + n : ''}</div>`;
+  };
+  window.shopGo = sid => {
+    shopHotOnly = false; shopOpenSt[sid] = true; switchPage('shop', shopNavEl); renderShop();
+    setTimeout(() => { const el = document.querySelector('#shop-body [data-store="' + sid + '"]'); if (el) { el.scrollIntoView({ block: 'start', behavior: 'smooth' }); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1800); } }, 150);
+  };
   function shopItemHtml(st, o) {
     const it = o.it, t = o.t, s = o.s, my = (SV[me] || {})[it.id];
     const tag = s === 'hot' ? '<span class="shop-tag hot">🔥 激推</span>' : s === 'bad' ? '<span class="shop-tag bad">💣 地雷</span>' : s === 'mix' ? '<span class="shop-tag mix">⚖️ 兩極</span>' : '';
     const pic = it.ph ? `<img class="shop-ph" data-sid="${it.id}" data-pv="${it.pv || 0}" alt="" onclick="this.src&&viewImg(this.src)">` : it.img ? `<img class="shop-ph" src="${esc(it.img)}" alt="" loading="lazy" onclick="viewImg(this.src)" onerror="this.remove()">` : '';
-    return `<div class="shop-item ${s}"><div class="shop-nm">${tag}${esc(it.name)}</div>${pic}${it.note ? `<div class="shop-note">${md(it.note)}</div>` : ''}<div class="shop-q">買過的人投個票吧</div><div class="shop-vote">${[['r', '👍', '推薦'], ['o', '😐', '普通'], ['n', '👎', '不推']].map(([k, e, l]) => `<button type="button" class="${k} ${my === k ? 'on' : ''}" onclick="shopVote('${it.id}','${k}')">${e} ${l} ${t[k]}</button>`).join('')}</div><div class="ed admin-only"><span onclick="shopItemEdit('${st.id}','${it.id}')">✏️ 編輯</span><span onclick="shopMove('i','${st.id}','${it.id}',-1)">▲ 上移</span><span onclick="shopMove('i','${st.id}','${it.id}',1)">▼ 下移</span></div></div>`;
+    return `<div class="shop-item ${s}"><div class="shop-row">${pic}<div class="shop-main"><div class="shop-nm">${tag}${esc(it.name)}</div>${shopPrice(it)}${it.note ? `<div class="shop-note">${md(it.note)}</div>` : ''}</div></div><div class="shop-vote">${[['r', '👍', '推薦'], ['o', '😐', '普通'], ['n', '👎', '不推']].map(([k, e, l]) => `<button type="button" class="${k} ${my === k ? 'on' : ''}" onclick="shopVote('${it.id}','${k}')">${e} ${l} ${t[k]}</button>`).join('')}</div><div class="ed admin-only"><span onclick="shopItemEdit('${st.id}','${it.id}')">✏️ 編輯</span><span onclick="shopMove('i','${st.id}','${it.id}',-1)">▲ 上移</span><span onclick="shopMove('i','${st.id}','${it.id}',1)">▼ 下移</span></div></div>`;
   }
   function renderShop() {
     const bd = $('shop-body'); if (!bd) return;
@@ -859,7 +889,7 @@
       const shown = (shopHotOnly ? all.filter(o => o.s === 'hot') : all).sort((a, b) => ord[a.s] - ord[b.s] || a.i - b.i);
       if (shopHotOnly && !shown.length) return;
       const nHot = all.filter(o => o.s === 'hot').length, open = shopHotOnly ? shopOpenSt[st.id] !== false : !!shopOpenSt[st.id];
-      h += `<details class="info-card shop-store" ${open ? 'open' : ''} ontoggle="shopOpen('${st.id}',this.open,this)"><summary><span>${esc(st.icon || '🏪')} ${esc(st.name)}</span><span class="shop-cnt">${nHot ? `<b class="shop-hotn">🔥${nHot}</b>　` : ''}${all.length} 項</span></summary><div class="shop-list"><div class="admin-only" style="gap:8px"><button class="btn btn-outline" onclick="shopItemEdit('${st.id}')">+ 新增商品</button></div><div class="ed admin-only"><span onclick="shopStoreEdit('${st.id}')">✏️ 編輯店家</span><span onclick="shopMove('s','${st.id}',null,-1)">▲ 上移</span><span onclick="shopMove('s','${st.id}',null,1)">▼ 下移</span></div>${shown.map(o => shopItemHtml(st, o)).join('') || '<div class="muted" style="text-align:center;padding:10px">這間店還沒有推薦商品</div>'}</div></details>`;
+      h += `<details class="info-card shop-store" data-store="${st.id}" ${open ? 'open' : ''} ontoggle="shopOpen('${st.id}',this.open,this)"><summary><span>${esc(st.icon || '🏪')} ${esc(st.name)}</span><span class="shop-cnt">${nHot ? `<b class="shop-hotn">🔥${nHot}</b>　` : ''}${all.length} 項</span></summary><div class="shop-list"><div class="admin-only" style="gap:8px"><button class="btn btn-outline" onclick="shopItemEdit('${st.id}')">+ 新增商品</button></div><div class="ed admin-only"><span onclick="shopStoreEdit('${st.id}')">✏️ 編輯店家</span><span onclick="shopMove('s','${st.id}',null,-1)">▲ 上移</span><span onclick="shopMove('s','${st.id}',null,1)">▼ 下移</span></div>${shown.map(o => shopItemHtml(st, o)).join('') || '<div class="muted" style="text-align:center;padding:10px">這間店還沒有推薦商品</div>'}</div></details>`;
     });
     bd.innerHTML = h;
     bd.querySelectorAll('details[open] img[data-sid]').forEach(shopPh);
