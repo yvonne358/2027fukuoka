@@ -10,6 +10,7 @@
         (data.days || []).forEach(d => (d.events || []).forEach(e => add(e.image)));
         ((data.info || {}).hotels || []).forEach(h => add(h.img));
         ((data.rating || {}).items || []).forEach(i => (i.players || []).forEach(p => add(p.img)));
+        ((data.shop || {}).stores || []).forEach(st => (st.items || []).forEach(i => add(i.img)));
       } catch (x) { }
       reg.active.postMessage({ type: 'warm', list: L });
     }).catch(() => { });
@@ -33,7 +34,7 @@
   // 旅程代碼只需要寫「前半段」：網址的代碼是『前半段-後半段』時，這裡寫前半段（例如 fukuoka2027）就會對應到，後半段不用（也不要）寫進來
   // 格式：'前半段': { name: '主畫面顯示的名稱', icon: '主畫面圖示.png', bg: '內頁背景圖.jpg' }，三項都可以只寫需要的；沒列在這裡的旅程用預設值
   const TRIP_APP = {
-    // 'fukuoka2027': { name: '福岡之旅', icon: 'app-icon.png', bg: 'header-bg.jpg' },
+    // 'fukuoka2027': { name: '福岡之旅', icon: 'icon-fukuoka.png', bg: 'bg-fukuoka.jpg' },
   };
   const tripCfg = () => { let best = null; for (const k in TRIP_APP) if ((trip === k || trip.startsWith(k + '-')) && (best === null || k.length > best.length)) best = k; return TRIP_APP[best] || {}; };   // 取最長的相符前半段
   { const c = tripCfg(); if (c && c.bg) document.documentElement.style.setProperty('--hero-img', "url('" + new URL(c.bg, location.href).href + "')"); }   // 這個旅程的內頁背景圖
@@ -422,15 +423,15 @@
           v = blank();
           ref.set(clean(norm(v))); return;
         }
-        noTrip(false); votes = v.votes || {}; delete v.votes; DONE = v.done || {}; delete v.done; MASC = v.mascot || null; delete v.mascot;
-        try { localStorage.setItem('done_' + trip, JSON.stringify(DONE)); localStorage.setItem('votes_' + trip, JSON.stringify(votes)); } catch (e) { }
+        noTrip(false); votes = v.votes || {}; delete v.votes; DONE = v.done || {}; delete v.done; MASC = v.mascot || null; delete v.mascot; SV = v.shopv || {}; delete v.shopv;
+        try { localStorage.setItem('done_' + trip, JSON.stringify(DONE)); localStorage.setItem('votes_' + trip, JSON.stringify(votes)); localStorage.setItem('shopv_' + trip, JSON.stringify(SV)); } catch (e) { }
         const ex = v.exp ? Object.values(v.exp) : [], old = v.expenses ? Object.values(v.expenses).filter(Boolean) : [], migrate = !ex.length && old.length;   // 舊格式（整包陣列）自動搬成單筆儲存
         delete v.exp; v.expenses = ex.length ? ex : old;
         data = norm(v); localStorage.setItem('trip_data_public', JSON.stringify(data));
         if (MASC && Date.now() - MASC.t < 432e5 && MASC.t > seenT()) { const mi = data.days.findIndex(x => x.date === MASC.d); if (mi >= 0) currentDayIndex = mi; }
         lastExp = {}; if (!migrate) data.expenses.forEach(e => { lastExp[e.id] = JSON.stringify(e); });
         if (currentDayIndex >= data.days.length) currentDayIndex = 0;
-        updateHero(); renderDates(); renderItinerary(); renderExpenseList(); renderTotalOverview(); renderShoppingList(); renderPackingList(); renderInfo(); renderRate();
+        updateHero(); renderDates(); renderItinerary(); renderExpenseList(); renderTotalOverview(); renderShoppingList(); renderPackingList(); renderInfo(); renderRate(); renderShop();
         if (migrate) saveData();
       });
     } catch (e) { console.error(e); _lc(); }
@@ -759,6 +760,111 @@
   window.catAdd = () => { const n = (prompt('新類別名稱：') || '').trim(); if (!n) return; const L = cats().slice(); if (L.includes(n)) return alert('已經有這個類別了'); L.push(n); data.settings.categories = L; catSave(); };
   window.catRen = i => { const L = cats().slice(), o = L[i], n = (prompt('改名為：', o) || '').trim(); if (!n || n === o) return; if (L.includes(n)) return alert('已經有這個類別了'); L[i] = n; data.settings.categories = L; data.expenses.forEach(e => { if (e.cat === o) e.cat = n; }); catSave(); };
   window.catDel = i => { const L = cats().slice(), o = L[i]; if (!confirm(`刪除類別「${o}」？\n使用這個類別的帳目會變成「未分類」。`)) return; L.splice(i, 1); data.settings.categories = L; data.expenses.forEach(e => { if (e.cat === o) delete e.cat; }); catSave(); };
+
+  // ---------- 購物推薦頁：依地點整理、可摺疊、商品照片、推薦／普通／不推投票 ----------
+  mkPage('shop', '購物推薦', '<i class="fas fa-bag-shopping"></i> Shop Guide', '', '<div id="shop-body"></div>');
+  nav.insertBefore(nv('shop', 'fa-bag-shopping', '購物'), nav.children[2]);   // 須知 ‧ 購物 ‧ 行程
+  const S = () => data.shop = Object.assign({ stores: [] }, data.shop || {}, { stores: ((data.shop || {}).stores || []) });
+  let SV = {}; try { SV = JSON.parse(localStorage.getItem('shopv_' + trip) || '{}') || {}; } catch (e) { }   // SV[誰][商品id] = 'r' 推薦 / 'o' 普通 / 'n' 不推
+  const shopOpenSt = {}; let shopHotOnly = false;
+  const shopCommit = () => { saveData(); renderShop(); };
+  const shopTally = iid => { const t = { r: 0, o: 0, n: 0 }; Object.values(SV).forEach(v => { const x = v && v[iid]; if (x in t) t[x]++; }); return t; };
+  const shopTh = () => { const st = data.settings || {}; return { hot: Math.max(1, parseInt(st.shopHot) || 3), bad: Math.max(1, parseInt(st.shopBad) || 2) }; };
+  const shopStatus = t => { const th = shopTh(), h = t.r >= th.hot, b = t.n >= th.bad; if (h && b) return t.r > t.n ? 'hot' : t.n > t.r ? 'bad' : 'mix'; return h ? 'hot' : b ? 'bad' : ''; };
+  const shopCompress = f => new Promise((res, rej) => { const img = new Image(), u = URL.createObjectURL(f); img.onload = () => { const k = Math.min(1, 900 / Math.max(img.width, img.height)), c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(u); res(c.toDataURL('image/jpeg', .65)); }; img.onerror = rej; img.src = u; });
+  // 商品照片放在 photos/<旅程>/shop_<商品id>/p，打開店家才載入，載入過的存在手機裡（離線也看得到）
+  const SPH = {};
+  function shopPh(img) {
+    const id = img.dataset.sid, pv = img.dataset.pv, key = 'sp_' + id + '_' + pv;
+    const show = u => { img.src = u; };
+    if (SPH[key]) return show(SPH[key]);
+    let c = null; try { c = localStorage.getItem(key); } catch (e) { }
+    if (c) { SPH[key] = c; return show(c); }
+    ready.then(() => photoRef('shop_' + id).child('p').once('value')).then(sn => {
+      const u = sn.val(); if (!u) return; SPH[key] = u; show(u);
+      try { Object.keys(localStorage).filter(k => k.indexOf('sp_' + id + '_') === 0 && k !== key).forEach(k => localStorage.removeItem(k)); localStorage.setItem(key, u); } catch (e) { }
+    }).catch(() => { });
+  }
+  const shopPhDel = it => { if (it && it.ph) { ready.then(() => photoRef('shop_' + it.id).remove()).catch(() => { }); try { Object.keys(localStorage).filter(k => k.indexOf('sp_' + it.id + '_') === 0).forEach(k => localStorage.removeItem(k)); } catch (e) { } } };
+  window.shopOpen = (sid, open, el) => { shopOpenSt[sid] = open; if (open && el) el.querySelectorAll('img[data-sid]').forEach(shopPh); };
+  window.shopFilter = v => { shopHotOnly = v; renderShop(); };
+  window.shopThSet = (k, v) => { data.settings = data.settings || {}; data.settings[k] = Math.max(1, parseInt(v) || 1); shopCommit(); };
+  window.shopVote = (iid, v) => {
+    const cur = (SV[me] || {})[iid], nv = cur === v ? null : v; SV[me] = SV[me] || {};
+    if (nv) SV[me][iid] = nv; else delete SV[me][iid];
+    try { localStorage.setItem('shopv_' + trip, JSON.stringify(SV)); } catch (e) { }
+    ready.then(() => { const r0 = ref.child('shopv/' + me + '/' + iid); return nv ? r0.set(nv) : r0.remove(); }).catch(() => toast('❌ 投票未同步', 1));
+    renderShop();
+  };
+  window.shopMove = (k, sid, iid, d) => {
+    const L = S().stores; let A = L, id = sid;
+    if (k === 'i') { const st = L.find(x => x.id === sid); if (!st) return; A = st.items = st.items || []; id = iid; }
+    const i = A.findIndex(x => x.id === id), j = i + d; if (i < 0 || j < 0 || j >= A.length) return;
+    [A[i], A[j]] = [A[j], A[i]]; shopCommit();
+  };
+  window.shopStoreEdit = sid => {
+    const L = S().stores, n = !sid, st = n ? {} : L.find(x => x.id === sid); if (!n && !st) return;
+    form(n ? '新增店家／地點' : '編輯店家／地點', [['name', '店家／地點名稱（如：7-11、唐吉訶德天神店）'], ['icon', '圖示 emoji（選填，如 🏪）']], st, o => {
+      if (!o.name) return;
+      if (n) { const x = { id: uid(), name: o.name, icon: o.icon, items: [] }; L.push(x); shopOpenSt[x.id] = true; } else Object.assign(st, o);
+      shopCommit();
+    }, n ? null : () => { (st.items || []).forEach(shopPhDel); L.splice(L.indexOf(st), 1); shopCommit(); });
+  };
+  let SF = null;
+  window.shopItemEdit = (sid, iid) => {
+    const st = S().stores.find(x => x.id === sid); if (!st) return; st.items = st.items || [];
+    const it = iid ? st.items.find(x => x.id === iid) : null; if (iid && !it) return;
+    SF = { data: null, rm: false };
+    let m = $('shop-modal'); if (!m) { m = document.createElement('div'); m.id = 'shop-modal'; m.className = 'modal'; document.body.appendChild(m); }
+    m.innerHTML = `<div class="modal-content"><h3 style="margin-top:0">${it ? '編輯商品' : '新增商品'}　<small class="muted">${esc(st.name)}</small></h3><label>商品名稱（外文也可以）</label><input id="sf-name" type="text"><label>說明（為什麼推薦、口味、價格…）</label>${mdBar('sf-note')}<textarea id="sf-note" rows="4"></textarea><label>照片（選填，可拍照或從相簿選）</label><div id="sf-prev"></div><input id="sf-file" type="file" accept="image/*"><label>或貼上圖片網址（選填）</label><input id="sf-img" type="text"><button class="btn" id="sf-ok">儲存</button>${it ? '<button class="btn btn-danger" id="sf-del">刪除</button>' : ''}<button class="btn btn-outline" id="sf-x" style="margin-top:5px">取消</button></div>`;
+    $('sf-name').value = it ? it.name || '' : ''; $('sf-note').value = it ? it.note || '' : ''; $('sf-img').value = it ? it.img || '' : '';
+    const prev = () => {
+      const p = $('sf-prev'), has = SF.data || (it && it.ph && !SF.rm);
+      p.innerHTML = has ? `<div class="mp-img"><img ${SF.data ? `src="${SF.data}"` : `data-sid="${it.id}" data-pv="${it.pv || 0}"`}><span id="sf-rm">✕</span></div>` : '';
+      if (has && !SF.data) shopPh(p.querySelector('img'));
+      if (has) $('sf-rm').onclick = () => { SF.data = null; SF.rm = true; prev(); };
+    };
+    prev();
+    $('sf-file').onchange = async e => { const f = e.target.files[0]; if (!f) return; try { SF.data = await shopCompress(f); SF.rm = false; prev(); } catch (x) { toast('❌ 圖片讀取失敗', 1); } };
+    const close = () => { m.style.display = 'none'; };
+    $('sf-x').onclick = close;
+    if (it) $('sf-del').onclick = () => { if (confirm('確定刪除這個商品？')) { shopPhDel(it); st.items.splice(st.items.indexOf(it), 1); close(); shopCommit(); } };
+    $('sf-ok').onclick = () => {
+      const name = $('sf-name').value.trim(); if (!name) { alert('請輸入商品名稱'); return; }
+      const x = it || { id: uid() }; if (!it) st.items.push(x);
+      x.name = name;
+      const note = $('sf-note').value.trim(), img = $('sf-img').value.trim();
+      if (note) x.note = note; else delete x.note;
+      if (img) x.img = img; else delete x.img;
+      if (SF.data) { x.ph = 1; x.pv = Date.now(); SPH['sp_' + x.id + '_' + x.pv] = SF.data; const u = SF.data; ready.then(() => photoRef('shop_' + x.id).child('p').set(u)).catch(() => toast('❌ 照片上傳失敗', 1)); }
+      else if (SF.rm && x.ph) { shopPhDel(x); delete x.ph; delete x.pv; }
+      shopOpenSt[sid] = true; close(); shopCommit();
+    };
+    m.style.display = 'flex';
+  };
+  function shopItemHtml(st, o) {
+    const it = o.it, t = o.t, s = o.s, my = (SV[me] || {})[it.id];
+    const tag = s === 'hot' ? '<span class="shop-tag hot">🔥 激推</span>' : s === 'bad' ? '<span class="shop-tag bad">💣 地雷</span>' : s === 'mix' ? '<span class="shop-tag mix">⚖️ 兩極</span>' : '';
+    const pic = it.ph ? `<img class="shop-ph" data-sid="${it.id}" data-pv="${it.pv || 0}" alt="" onclick="this.src&&viewImg(this.src)">` : it.img ? `<img class="shop-ph" src="${esc(it.img)}" alt="" loading="lazy" onclick="viewImg(this.src)" onerror="this.remove()">` : '';
+    return `<div class="shop-item ${s}"><div class="shop-nm">${tag}${esc(it.name)}</div>${pic}${it.note ? `<div class="shop-note">${md(it.note)}</div>` : ''}<div class="shop-q">買過的人投個票吧</div><div class="shop-vote">${[['r', '👍', '推薦'], ['o', '😐', '普通'], ['n', '👎', '不推']].map(([k, e, l]) => `<button type="button" class="${k} ${my === k ? 'on' : ''}" onclick="shopVote('${it.id}','${k}')">${e} ${l} ${t[k]}</button>`).join('')}</div><div class="ed admin-only"><span onclick="shopItemEdit('${st.id}','${it.id}')">✏️ 編輯</span><span onclick="shopMove('i','${st.id}','${it.id}',-1)">▲ 上移</span><span onclick="shopMove('i','${st.id}','${it.id}',1)">▼ 下移</span></div></div>`;
+  }
+  function renderShop() {
+    const bd = $('shop-body'); if (!bd) return;
+    const sts = S().stores, th = shopTh(), ord = { hot: 0, mix: 1, '': 2, bad: 3 };
+    let h = `<div class="admin-only shop-adm"><div class="info-card shop-set">⚙️ <span>🔥 激推：</span><input type="number" min="1" inputmode="numeric" value="${th.hot}" onchange="shopThSet('shopHot',this.value)"> 人推薦　<span>💣 地雷：</span><input type="number" min="1" inputmode="numeric" value="${th.bad}" onchange="shopThSet('shopBad',this.value)"> 人不推</div><button class="btn btn-outline" onclick="shopStoreEdit()">+ 新增店家／地點</button></div>`;
+    if (sts.length) h += `<div class="shop-filter"><span class="shop-chip ${shopHotOnly ? 'on' : ''}" onclick="shopFilter(${!shopHotOnly})">🔥 只看激推</span></div>`;
+    else h += '<div class="muted" style="text-align:center;margin-top:40px">還沒有店家<br>（管理員可按上方 + 新增）</div>';
+    sts.forEach(st => {
+      const all = (st.items || []).map((it, i) => { const t = shopTally(it.id); return { it, i, t, s: shopStatus(t) }; });
+      const shown = (shopHotOnly ? all.filter(o => o.s === 'hot') : all).sort((a, b) => ord[a.s] - ord[b.s] || a.i - b.i);
+      if (shopHotOnly && !shown.length) return;
+      const nHot = all.filter(o => o.s === 'hot').length, open = shopHotOnly ? shopOpenSt[st.id] !== false : !!shopOpenSt[st.id];
+      h += `<details class="info-card shop-store" ${open ? 'open' : ''} ontoggle="shopOpen('${st.id}',this.open,this)"><summary><span>${esc(st.icon || '🏪')} ${esc(st.name)}</span><span class="shop-cnt">${nHot ? `<b class="shop-hotn">🔥${nHot}</b>　` : ''}${all.length} 項</span></summary><div class="shop-list"><div class="admin-only" style="gap:8px"><button class="btn btn-outline" onclick="shopItemEdit('${st.id}')">+ 新增商品</button></div><div class="ed admin-only"><span onclick="shopStoreEdit('${st.id}')">✏️ 編輯店家</span><span onclick="shopMove('s','${st.id}',null,-1)">▲ 上移</span><span onclick="shopMove('s','${st.id}',null,1)">▼ 下移</span></div>${shown.map(o => shopItemHtml(st, o)).join('') || '<div class="muted" style="text-align:center;padding:10px">這間店還沒有推薦商品</div>'}</div></details>`;
+    });
+    bd.innerHTML = h;
+    bd.querySelectorAll('details[open] img[data-sid]').forEach(shopPh);
+  }
+  renderShop();
 
   // ---------- 旅程切換（僅管理員）----------
   const b = document.createElement('div'); b.id = 'trip-btn'; b.className = 'admin-only'; b.innerText = '🗺️ ' + (trip === 'default' ? '旅程' : trip);
